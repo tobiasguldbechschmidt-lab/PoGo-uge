@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GO Uge</title>
+
+<!-- PWA / "Add to Home Screen" support -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GO Uge">
+<meta name="theme-color" content="#0d1b2a">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+
+<style>
+  :root{
+    --bg:#0d1b2a;
+    --card:#14263b;
+    --card2:#1b3350;
+    --red:#e3350d;
+    --gold:#ffcb05;
+    --text:#eef3f8;
+    --muted:#9fb3c8;
+    --line:#22405f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    background: radial-gradient(circle at 50% -10%, #1b3350 0%, var(--bg) 60%);
+    color:var(--text);
+    min-height:100vh;
+    padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom));
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  .app{
+    width:100%;
+    max-width:420px;
+  }
+
+  .card{
+    background:var(--card);
+    border-radius:20px;
+    border:1px solid var(--line);
+    box-shadow:0 20px 60px rgba(0,0,0,0.4);
+    overflow:hidden;
+  }
+
+  .header{
+    position:relative;
+    padding:18px 18px 14px;
+    background: linear-gradient(180deg, rgba(227,53,13,0.18), rgba(227,53,13,0) 70%);
+    border-bottom:1px solid var(--line);
+  }
+  .header-row{ display:flex; align-items:center; gap:10px; }
+  .pokeball{
+    width:32px;height:32px;border-radius:50%;
+    background: linear-gradient(var(--red) 0 47%, #0d1b2a 47% 53%, #fff 53% 100%);
+    border:2px solid #0d1b2a;
+    position:relative; flex:none;
+  }
+  .pokeball::after{
+    content:""; position:absolute; top:50%; left:50%;
+    width:9px;height:9px; background:#fff; border:2px solid #0d1b2a;
+    border-radius:50%; transform:translate(-50%,-50%);
+  }
+  h1{ margin:0; font-size:18px; font-weight:700; }
+  .refresh-btn{
+    margin-left:auto;
+    width:30px;height:30px;border-radius:50%;
+    background:var(--card2); border:1px solid var(--line);
+    color:var(--muted); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:14px;
+  }
+  .refresh-btn.spinning svg{ animation: spin 0.8s linear infinite; }
+  @keyframes spin{ from{transform:rotate(0)} to{transform:rotate(360deg)} }
+  .subtitle{ margin:12px 0 0; font-size:12px; color:var(--muted); }
+
+  .list{ padding:6px 16px 16px; }
+  .status{
+    padding:30px 10px; text-align:center; color:var(--muted); font-size:13px;
+  }
+  .day-group{ margin-top:14px; }
+  .day-label{
+    font-size:11px; text-transform:uppercase; letter-spacing:0.8px;
+    color:var(--gold); font-weight:700; margin:0 0 6px 2px;
+  }
+  .event{
+    display:flex; gap:12px;
+    background:var(--card2); border:1px solid var(--line);
+    border-radius:14px; padding:11px 12px; margin-bottom:8px;
+    text-decoration:none; color:inherit;
+  }
+  .event-dot{ width:8px;height:8px;border-radius:50%; background:var(--red); margin-top:6px; flex:none; }
+  .event.ongoing .event-dot{ background:var(--gold); }
+  .event-body{ min-width:0; }
+  .event-title{ font-size:14px; font-weight:600; margin:0 0 2px; }
+  .event-time{ font-size:11.5px; color:var(--muted); margin:0 0 4px; }
+  .event-type{ font-size:11px; color:#c4d3e2; margin:0; text-transform:capitalize; }
+
+  .footer{
+    padding:10px 16px 14px; border-top:1px solid var(--line);
+    font-size:10.5px; color:var(--muted); text-align:center;
+  }
+  .footer span{ display:block; margin-top:2px; }
+
+  ::-webkit-scrollbar{ width:6px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="card">
+    <div class="header">
+      <div class="header-row">
+        <div class="pokeball"></div>
+        <h1>Denne uge i GO</h1>
+        <div class="refresh-btn" id="refreshBtn" title="Opdater">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/>
+          </svg>
+        </div>
+      </div>
+      <p class="subtitle" id="subtitle">Henter friske data …</p>
+    </div>
+
+    <div class="list" id="list">
+      <div class="status">Henter kommende events …</div>
+    </div>
+
+    <div class="footer">
+      Data: LeekDuck.com via ScrapedDuck
+      <span id="updatedAt"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const DATA_URL = "https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.json";
+const listEl = document.getElementById('list');
+const subtitleEl = document.getElementById('subtitle');
+const updatedEl = document.getElementById('updatedAt');
+const refreshBtn = document.getElementById('refreshBtn');
+
+const dayNames = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+
+function fmtDay(date){
+  return dayNames[date.getDay()] + ' ' + date.getDate() + '. ' + monthNames[date.getMonth()];
+}
+function fmtTime(date){
+  return date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0');
+}
+
+async function loadEvents(isManual){
+  if(isManual) refreshBtn.classList.add('spinning');
+  subtitleEl.textContent = 'Henter friske data …';
+  try{
+    const res = await fetch(DATA_URL + '?t=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const events = await res.json();
+
+    const now = new Date();
+    const weekAhead = new Date(now.getTime() + 7*24*60*60*1000);
+
+    // Events that are happening or starting within the next 7 days
+    const upcoming = events
+      .filter(e => e.start || e.end)
+      .map(e => ({
+        ...e,
+        startDate: e.start ? new Date(e.start) : null,
+        endDate: e.end ? new Date(e.end) : null,
+      }))
+      .filter(e => {
+        const start = e.startDate;
+        const end = e.endDate || e.startDate;
+        if(!start && !end) return false;
+        // include if it overlaps the next 7 days at all
+        return (end === null || end >= now) && (start === null || start <= weekAhead);
+      })
+      .sort((a,b) => (a.startDate?.getTime()||0) - (b.startDate?.getTime()||0));
+
+    render(upcoming, now);
+    subtitleEl.textContent = 'Næste 7 dage · ' + upcoming.length + ' events';
+    updatedEl.textContent = 'Opdateret ' + now.toLocaleDateString('da-DK') + ' ' + fmtTime(now);
+  }catch(err){
+    listEl.innerHTML = '<div class="status">Kunne ikke hente data lige nu.<br>Tjek din forbindelse og prøv igen.</div>';
+    subtitleEl.textContent = 'Fejl ved hentning';
+    console.error(err);
+  }finally{
+    if(isManual) refreshBtn.classList.remove('spinning');
+  }
+}
+
+function render(events, now){
+  if(events.length === 0){
+    listEl.innerHTML = '<div class="status">Ingen events fundet i den kommende uge.</div>';
+    return;
+  }
+
+  let html = '';
+  let lastDayKey = null;
+
+  events.forEach(e => {
+    const start = e.startDate;
+    const dayKey = start ? start.toDateString() : 'ukendt';
+    if(dayKey !== lastDayKey){
+      if(lastDayKey !== null) html += '';
+      html += `<div class="day-group"><p class="day-label">${start ? fmtDay(start) : 'Dato ukendt'}</p>`;
+      lastDayKey = dayKey;
+    }
+
+    const ongoing = start && start <= now;
+    const timeStr = start
+      ? (e.endDate ? fmtTime(start) + '–' + fmtTime(e.endDate) : fmtTime(start))
+      : '';
+
+    html += `
+      <a class="event ${ongoing ? 'ongoing' : ''}" href="${e.link || '#'}" target="_blank" rel="noopener">
+        <div class="event-dot"></div>
+        <div class="event-body">
+          <p class="event-title">${escapeHtml(e.name || 'Event')}</p>
+          <p class="event-time">${timeStr}</p>
+          <p class="event-type">${escapeHtml((e.heading || e.eventType || '').replace(/-/g,' '))}</p>
+        </div>
+      </a>`;
+  });
+
+  listEl.innerHTML = html;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+refreshBtn.addEventListener('click', () => loadEvents(true));
+
+// Auto-load on open
+loadEvents(false);
+
+// Re-fetch automatically if the app is reopened/foregrounded after being idle
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible') loadEvents(false);
+});
+
+// Register service worker for installability (best-effort, ignored if unsupported)
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
