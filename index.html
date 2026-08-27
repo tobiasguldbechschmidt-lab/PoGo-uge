@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>GO Uge</title>
 
-<!-- PWA / "Add to Home Screen" support -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GO Uge">
@@ -38,10 +37,7 @@
     justify-content:center;
   }
 
-  .app{
-    width:100%;
-    max-width:420px;
-  }
+  .app{ width:100%; max-width:420px; }
 
   .card{
     background:var(--card);
@@ -82,14 +78,21 @@
   .subtitle{ margin:12px 0 0; font-size:12px; color:var(--muted); }
 
   .list{ padding:6px 16px 16px; }
-  .status{
-    padding:30px 10px; text-align:center; color:var(--muted); font-size:13px;
-  }
+  .status{ padding:30px 10px; text-align:center; color:var(--muted); font-size:13px; }
+
   .day-group{ margin-top:14px; }
   .day-label{
     font-size:11px; text-transform:uppercase; letter-spacing:0.8px;
     color:var(--gold); font-weight:700; margin:0 0 6px 2px;
+    display:flex; align-items:baseline; gap:6px;
   }
+  .day-label .count{
+    color:var(--muted); font-weight:500; text-transform:none; letter-spacing:0;
+  }
+  .day-empty{
+    font-size:12px; color:var(--muted); padding:2px 2px 2px;
+  }
+
   .event{
     display:flex; gap:12px;
     background:var(--card2); border:1px solid var(--line);
@@ -148,15 +151,19 @@ const subtitleEl = document.getElementById('subtitle');
 const updatedEl = document.getElementById('updatedAt');
 const refreshBtn = document.getElementById('refreshBtn');
 
-const dayNames = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+// Event types that describe a long background period (whole season, app update, etc.)
+// rather than a specific dated happening — these clutter a "this week" view, so skip them.
+const SKIP_TYPES = ['season', 'update'];
+const MAX_EVENT_SPAN_DAYS = 20; // anything longer is treated as background, not a "this week" event
+
+const dayNamesShort = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
 const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
 
-function fmtDay(date){
-  return dayNames[date.getDay()] + ' ' + date.getDate() + '. ' + monthNames[date.getMonth()];
-}
-function fmtTime(date){
-  return date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0');
-}
+function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function endOfDay(d){ const x = new Date(d); x.setHours(23,59,59,999); return x; }
+function fmtTime(date){ return date.getHours().toString().padStart(2,'0') + ':' + date.getMinutes().toString().padStart(2,'0'); }
+function fmtDate(date){ return date.getDate() + '. ' + monthNames[date.getMonth()].toUpperCase(); }
+function sameDay(a,b){ return a.toDateString() === b.toDateString(); }
 
 async function loadEvents(isManual){
   if(isManual) refreshBtn.classList.add('spinning');
@@ -164,30 +171,36 @@ async function loadEvents(isManual){
   try{
     const res = await fetch(DATA_URL + '?t=' + Date.now(), {cache:'no-store'});
     if(!res.ok) throw new Error('HTTP ' + res.status);
-    const events = await res.json();
+    const raw = await res.json();
 
     const now = new Date();
-    const weekAhead = new Date(now.getTime() + 7*24*60*60*1000);
 
-    // Events that are happening or starting within the next 7 days
-    const upcoming = events
-      .filter(e => e.start || e.end)
+    const events = raw
+      .filter(e => !SKIP_TYPES.includes(e.eventType))
       .map(e => ({
         ...e,
         startDate: e.start ? new Date(e.start) : null,
         endDate: e.end ? new Date(e.end) : null,
       }))
       .filter(e => {
-        const start = e.startDate;
-        const end = e.endDate || e.startDate;
-        if(!start && !end) return false;
-        // include if it overlaps the next 7 days at all
-        return (end === null || end >= now) && (start === null || start <= weekAhead);
-      })
-      .sort((a,b) => (a.startDate?.getTime()||0) - (b.startDate?.getTime()||0));
+        if(!e.startDate && !e.endDate) return false;
+        if(e.startDate && e.endDate){
+          const spanDays = (e.endDate - e.startDate) / (1000*60*60*24);
+          if(spanDays > MAX_EVENT_SPAN_DAYS) return false;
+        }
+        return true;
+      });
 
-    render(upcoming, now);
-    subtitleEl.textContent = 'Næste 7 dage · ' + upcoming.length + ' events';
+    // Build the next 7 calendar days starting today
+    const days = [];
+    for(let i=0;i<7;i++){
+      const d = new Date(now);
+      d.setDate(d.getDate() + i);
+      days.push(d);
+    }
+
+    render(events, days, now);
+    subtitleEl.textContent = 'I dag til ' + fmtDate(days[6]);
     updatedEl.textContent = 'Opdateret ' + now.toLocaleDateString('da-DK') + ' ' + fmtTime(now);
   }catch(err){
     listEl.innerHTML = '<div class="status">Kunne ikke hente data lige nu.<br>Tjek din forbindelse og prøv igen.</div>';
@@ -198,41 +211,77 @@ async function loadEvents(isManual){
   }
 }
 
-function render(events, now){
-  if(events.length === 0){
-    listEl.innerHTML = '<div class="status">Ingen events fundet i den kommende uge.</div>';
-    return;
-  }
+function eventTimeLabel(e, day, now){
+  const start = e.startDate;
+  const end = e.endDate;
+  const dayStart = startOfDay(day);
+  const dayEnd = endOfDay(day);
+  const startsToday = start && sameDay(start, day);
+  const endsToday = end && sameDay(end, day);
+  const startedBefore = start && start < dayStart;
+  const endsAfter = end && end > dayEnd;
 
+  if(startsToday && endsToday) return fmtTime(start) + '–' + fmtTime(end);
+  if(startsToday && !end) return 'Fra ' + fmtTime(start);
+  if(startsToday && endsAfter) return 'Fra ' + fmtTime(start) + ' · kører til ' + fmtDate(end);
+  if(startedBefore && endsToday) return 'Slutter kl. ' + fmtTime(end);
+  if(startedBefore && !end) return 'Løbende';
+  if(startedBefore && endsAfter) return 'Kører hele dagen';
+  if(start && !end) return fmtTime(start);
+  return '';
+}
+
+function render(events, days, now){
   let html = '';
-  let lastDayKey = null;
+  let totalShown = 0;
 
-  events.forEach(e => {
-    const start = e.startDate;
-    const dayKey = start ? start.toDateString() : 'ukendt';
-    if(dayKey !== lastDayKey){
-      if(lastDayKey !== null) html += '';
-      html += `<div class="day-group"><p class="day-label">${start ? fmtDay(start) : 'Dato ukendt'}</p>`;
-      lastDayKey = dayKey;
+  days.forEach((day, idx) => {
+    const dayStart = startOfDay(day);
+    const dayEnd = endOfDay(day);
+
+    const todaysEvents = events
+      .filter(e => {
+        const s = e.startDate || e.endDate;
+        const en = e.endDate || e.startDate;
+        return s <= dayEnd && en >= dayStart;
+      })
+      .sort((a,b) => {
+        const at = a.startDate ? a.startDate.getTime() : -Infinity;
+        const bt = b.startDate ? b.startDate.getTime() : -Infinity;
+        return at - bt;
+      });
+
+    const label = idx === 0 ? 'I dag' : idx === 1 ? 'I morgen' : dayNamesShort[day.getDay()];
+    const dateStr = fmtDate(day);
+
+    html += `<div class="day-group">
+      <p class="day-label">${label} <span class="count">· ${dateStr}</span></p>`;
+
+    if(todaysEvents.length === 0){
+      html += `<p class="day-empty">Ingen events</p>`;
+    } else {
+      todaysEvents.forEach(e => {
+        const ongoing = e.startDate && e.startDate < dayStart;
+        const timeStr = eventTimeLabel(e, day, now);
+        html += `
+          <a class="event ${ongoing ? 'ongoing' : ''}" href="${e.link || '#'}" target="_blank" rel="noopener">
+            <div class="event-dot"></div>
+            <div class="event-body">
+              <p class="event-title">${escapeHtml(e.name || 'Event')}</p>
+              <p class="event-time">${timeStr}</p>
+              <p class="event-type">${escapeHtml((e.heading || e.eventType || '').replace(/-/g,' '))}</p>
+            </div>
+          </a>`;
+        totalShown++;
+      });
     }
-
-    const ongoing = start && start <= now;
-    const timeStr = start
-      ? (e.endDate ? fmtTime(start) + '–' + fmtTime(e.endDate) : fmtTime(start))
-      : '';
-
-    html += `
-      <a class="event ${ongoing ? 'ongoing' : ''}" href="${e.link || '#'}" target="_blank" rel="noopener">
-        <div class="event-dot"></div>
-        <div class="event-body">
-          <p class="event-title">${escapeHtml(e.name || 'Event')}</p>
-          <p class="event-time">${timeStr}</p>
-          <p class="event-type">${escapeHtml((e.heading || e.eventType || '').replace(/-/g,' '))}</p>
-        </div>
-      </a>`;
+    html += `</div>`;
   });
 
   listEl.innerHTML = html;
+  if(totalShown === 0){
+    listEl.innerHTML = '<div class="status">Ingen events fundet i den kommende uge.</div>';
+  }
 }
 
 function escapeHtml(str){
@@ -242,16 +291,12 @@ function escapeHtml(str){
 }
 
 refreshBtn.addEventListener('click', () => loadEvents(true));
-
-// Auto-load on open
 loadEvents(false);
 
-// Re-fetch automatically if the app is reopened/foregrounded after being idle
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState === 'visible') loadEvents(false);
 });
 
-// Register service worker for installability (best-effort, ignored if unsupported)
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
