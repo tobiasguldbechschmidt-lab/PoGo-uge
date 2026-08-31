@@ -24,6 +24,7 @@
     --line:#22405f;
     --blue:#5fb3f0;
     --green:#5fd88f;
+    --purple:#a78bfa;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
@@ -99,10 +100,20 @@
     border-bottom-color:var(--gold);
   }
 
-  .panel{ display:none; }
-  .panel.active{ display:block; }
+  /* Swipeable panel track */
+  .viewport{ overflow:hidden; }
+  .track{
+    display:flex;
+    width:300%;
+    transition: transform 0.28s cubic-bezier(.25,.9,.35,1);
+  }
+  .track.dragging{ transition:none; }
+  .panel{
+    width:33.3333%;
+    flex:none;
+  }
 
-  .list{ padding:6px 16px 16px; }
+  .list{ padding:6px 16px 16px; max-height:60vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .status{ padding:30px 10px; text-align:center; color:var(--muted); font-size:13px; }
 
   .day-group{ margin-top:14px; }
@@ -146,6 +157,7 @@
   }
   .link-icon.raid{ background:rgba(95,179,240,0.15); color:var(--blue); }
   .link-icon.wild{ background:rgba(95,216,143,0.15); color:var(--green); }
+  .link-icon.max{ background:rgba(167,139,250,0.15); color:var(--purple); }
   .link-body{ min-width:0; flex:1; }
   .link-title{ font-size:14px; font-weight:600; margin:0 0 2px; }
   .link-desc{ font-size:11.5px; color:var(--muted); margin:0; line-height:1.4; }
@@ -155,6 +167,23 @@
     font-size:11px; color:var(--muted); line-height:1.5;
     background:var(--card2); border:1px solid var(--line);
     border-radius:14px; padding:11px 12px; margin-top:6px;
+  }
+
+  /* Ongoing events list */
+  .ev-card{
+    display:block;
+    background:var(--card2); border:1px solid var(--line);
+    border-radius:14px; padding:12px 13px; margin-bottom:8px;
+    text-decoration:none; color:inherit;
+  }
+  .ev-top{ display:flex; align-items:flex-start; gap:10px; }
+  .ev-title{ font-size:14px; font-weight:600; margin:0 0 3px; flex:1; }
+  .ev-arrow{ color:var(--muted); font-size:14px; flex:none; margin-top:1px; }
+  .ev-meta{ font-size:11px; color:var(--muted); margin:0; }
+  .ev-heading{
+    display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.4px; color:var(--gold); background:rgba(255,203,5,0.1);
+    border-radius:6px; padding:2px 6px; margin-bottom:6px;
   }
 
   .footer{
@@ -183,49 +212,62 @@
       </div>
       <p class="subtitle" id="subtitle">Henter friske data …</p>
       <div class="tabs">
-        <div class="tab active" data-tab="week">Denne uge</div>
-        <div class="tab" data-tab="live">Live nu</div>
+        <div class="tab active" data-index="0">Denne uge</div>
+        <div class="tab" data-index="1">Live nu</div>
+        <div class="tab" data-index="2">Events</div>
       </div>
     </div>
 
-    <div class="panel active" id="panel-week">
-      <div class="list" id="listWeek">
-        <div class="status">Henter kommende events …</div>
-      </div>
-    </div>
+    <div class="viewport" id="viewport">
+      <div class="track" id="track">
 
-    <div class="panel" id="panel-live">
-      <div class="list">
-        <a class="link-card" href="https://leekduck.com/boss/" target="_blank" rel="noopener">
-          <div class="link-icon raid">⚔️</div>
-          <div class="link-body">
-            <p class="link-title">Aktuelle raid-bosses</p>
-            <p class="link-desc">Live liste hos LeekDuck, opdateret manuelt af redaktionen samme dag som bosses skifter.</p>
+        <div class="panel">
+          <div class="list" id="listWeek">
+            <div class="status">Henter kommende events …</div>
           </div>
-          <div class="link-arrow">↗</div>
-        </a>
-
-        <a class="link-card" href="https://leekduck.com/eggs/" target="_blank" rel="noopener">
-          <div class="link-icon wild">🥚</div>
-          <div class="link-body">
-            <p class="link-title">Hvad klækker af æg lige nu</p>
-            <p class="link-desc">Live liste hos LeekDuck over hvilke Pokémon der kan klækkes af 2 km, 5 km, 7 km, 10 km og 12 km æg i den aktuelle sæson.</p>
-          </div>
-          <div class="link-arrow">↗</div>
-        </a>
-
-        <a class="link-card" href="https://www.snacknap.com/max-battles" target="_blank" rel="noopener">
-          <div class="link-icon" style="background:rgba(167,139,250,0.15);color:#a78bfa;">💥</div>
-          <div class="link-body">
-            <p class="link-title">Dynamax / Gigantamax lige nu</p>
-            <p class="link-desc">Aktuel liste over hvilke Dynamax- og Gigantamax-Pokémon der er i Max Battles lige nu.</p>
-          </div>
-          <div class="link-arrow">↗</div>
-        </a>
-
-        <div class="note">
-          Der findes desværre ingen pålidelig, offentlig kilde til <strong>præcis hvad der spawner lige nu i Danmark</strong> — det afhænger 100% af din helt specifikke lokation. De "scanner-kort" der findes til det bryder Pokémon GOs regler og kan give din konto en advarsel, så dem linker jeg bevidst ikke til. Den bedste og sikre metode i din helt lokale nærhed er appens egen <strong>Nearby/Radar</strong>-funktion nederst til højre på kortet.
         </div>
+
+        <div class="panel">
+          <div class="list">
+            <a class="link-card" href="https://leekduck.com/boss/" target="_blank" rel="noopener">
+              <div class="link-icon raid">⚔️</div>
+              <div class="link-body">
+                <p class="link-title">Aktuelle raid-bosses</p>
+                <p class="link-desc">Live liste hos LeekDuck, opdateret manuelt af redaktionen samme dag som bosses skifter.</p>
+              </div>
+              <div class="link-arrow">↗</div>
+            </a>
+
+            <a class="link-card" href="https://leekduck.com/eggs/" target="_blank" rel="noopener">
+              <div class="link-icon wild">🥚</div>
+              <div class="link-body">
+                <p class="link-title">Hvad klækker af æg lige nu</p>
+                <p class="link-desc">Live liste hos LeekDuck over hvilke Pokémon der kan klækkes af 2 km, 5 km, 7 km, 10 km og 12 km æg i den aktuelle sæson.</p>
+              </div>
+              <div class="link-arrow">↗</div>
+            </a>
+
+            <a class="link-card" href="https://www.snacknap.com/max-battles" target="_blank" rel="noopener">
+              <div class="link-icon max">💥</div>
+              <div class="link-body">
+                <p class="link-title">Dynamax / Gigantamax lige nu</p>
+                <p class="link-desc">Aktuel liste over hvilke Dynamax- og Gigantamax-Pokémon der er i Max Battles lige nu.</p>
+              </div>
+              <div class="link-arrow">↗</div>
+            </a>
+
+            <div class="note">
+              Der findes desværre ingen pålidelig, offentlig kilde til <strong>præcis hvad der spawner lige nu i Danmark</strong> — det afhænger 100% af din helt specifikke lokation. De "scanner-kort" der findes til det bryder Pokémon GOs regler og kan give din konto en advarsel, så dem linker jeg bevidst ikke til. Den bedste og sikre metode i din helt lokale nærhed er appens egen <strong>Nearby/Radar</strong>-funktion nederst til højre på kortet.
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="list" id="listEvents">
+            <div class="status">Henter events i gang …</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -244,9 +286,17 @@ const subtitleEl = document.getElementById('subtitle');
 const titleEl = document.getElementById('titleText');
 const updatedEl = document.getElementById('updatedAt');
 const tabs = document.querySelectorAll('.tab');
-const panels = { week: document.getElementById('panel-week'), live: document.getElementById('panel-live') };
+const viewport = document.getElementById('viewport');
+const track = document.getElementById('track');
 
-let currentTab = 'week';
+const TAB_META = [
+  { title: 'Denne uge i GO', subtitle: null },
+  { title: 'Live lige nu', subtitle: 'Genveje til opdaterede live-kilder' },
+  { title: 'Events i gang', subtitle: 'Alt der kører lige nu, med link til detaljer' },
+];
+
+let currentIndex = 0;
+let cachedEvents = null; // shared between week + events panels
 
 const dayNamesShort = ['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
 const monthNames = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
@@ -258,35 +308,74 @@ function fmtDate(date){ return date.getDate() + '. ' + monthNames[date.getMonth(
 function sameDay(a,b){ return a.toDateString() === b.toDateString(); }
 function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
-// ---------- Tabs ----------
-tabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    tabs.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    Object.values(panels).forEach(p => p.classList.remove('active'));
-    currentTab = tab.dataset.tab;
-    panels[currentTab].classList.add('active');
-    updateHeaderForTab();
-  });
-});
-
-function updateHeaderForTab(){
-  if(currentTab === 'week'){
-    titleEl.textContent = 'Denne uge i GO';
-    subtitleEl.textContent = 'I dag til om 7 dage';
-  } else {
-    titleEl.textContent = 'Live lige nu';
-    subtitleEl.textContent = 'Genveje til opdaterede live-kilder';
+// ---------- Tab switching (click + swipe share this) ----------
+function goToIndex(idx, animate){
+  idx = Math.max(0, Math.min(2, idx));
+  currentIndex = idx;
+  track.style.transition = (animate === false) ? 'none' : '';
+  track.style.transform = 'translateX(' + (-idx * (100/3)) + '%)';
+  tabs.forEach((t,i) => t.classList.toggle('active', i === idx));
+  const meta = TAB_META[idx];
+  titleEl.textContent = meta.title;
+  if(meta.subtitle){
+    subtitleEl.textContent = meta.subtitle;
+  } else if(cachedEvents){
+    updateWeekSubtitle();
   }
 }
 
-// ---------- Events (This Week) ----------
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => goToIndex(parseInt(tab.dataset.index, 10)));
+});
+
+// ---------- Swipe gestures ----------
+let touchStartX = 0, touchStartY = 0, dragDeltaX = 0, isDragging = false, lockedAxis = null;
+
+viewport.addEventListener('touchstart', function(e){
+  const t = e.touches[0];
+  touchStartX = t.clientX; touchStartY = t.clientY;
+  dragDeltaX = 0; isDragging = true; lockedAxis = null;
+  track.classList.add('dragging');
+}, { passive: true });
+
+viewport.addEventListener('touchmove', function(e){
+  if(!isDragging) return;
+  const t = e.touches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+
+  if(lockedAxis === null && (Math.abs(dx) > 6 || Math.abs(dy) > 6)){
+    lockedAxis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+  }
+  if(lockedAxis !== 'x') return;
+
+  e.preventDefault();
+  dragDeltaX = dx;
+  const basePercent = -currentIndex * (100/3);
+  const dragPercent = (dx / viewport.offsetWidth) * (100/3);
+  track.style.transform = 'translateX(' + (basePercent + dragPercent) + '%)';
+}, { passive: false });
+
+viewport.addEventListener('touchend', function(){
+  if(!isDragging) return;
+  isDragging = false;
+  track.classList.remove('dragging');
+
+  if(lockedAxis === 'x' && Math.abs(dragDeltaX) > viewport.offsetWidth * 0.18){
+    goToIndex(currentIndex + (dragDeltaX < 0 ? 1 : -1));
+  } else {
+    goToIndex(currentIndex);
+  }
+});
+
+// ---------- Events (shared source for Week + Events tabs) ----------
 const SKIP_TYPES = ['season', 'update'];
 const MAX_EVENT_SPAN_DAYS = 20;
 
 async function loadEvents(isManual){
   if(isManual) refreshBtn.classList.add('spinning');
-  const listEl = document.getElementById('listWeek');
+  const listWeekEl = document.getElementById('listWeek');
+  const listEventsEl = document.getElementById('listEvents');
   try{
     const res = await fetch(EVENTS_URL + '?t=' + Date.now(), {cache:'no-store'});
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -305,18 +394,30 @@ async function loadEvents(isManual){
         return true;
       });
 
+    cachedEvents = { events: events, now: now };
+
     const days = [];
     for(let i=0;i<7;i++){ const d = new Date(now); d.setDate(d.getDate() + i); days.push(d); }
 
-    renderWeek(events, days, now, listEl);
-    if(currentTab === 'week') subtitleEl.textContent = 'I dag til ' + fmtDate(days[6]);
+    renderWeek(events, days, now, listWeekEl);
+    renderOngoing(events, now, listEventsEl);
+    if(currentIndex === 0) updateWeekSubtitle(days[6]);
     updatedEl.textContent = 'Opdateret ' + now.toLocaleDateString('da-DK') + ' ' + fmtTime(now);
   }catch(err){
-    listEl.innerHTML = '<div class="status">Kunne ikke hente data lige nu.<br>Tjek din forbindelse og prøv igen.</div>';
+    listWeekEl.innerHTML = '<div class="status">Kunne ikke hente data lige nu.<br>Tjek din forbindelse og prøv igen.</div>';
+    listEventsEl.innerHTML = '<div class="status">Kunne ikke hente data lige nu.<br>Tjek din forbindelse og prøv igen.</div>';
     console.error(err);
   }finally{
     if(isManual) refreshBtn.classList.remove('spinning');
   }
+}
+
+function updateWeekSubtitle(endDay){
+  if(!endDay && cachedEvents){
+    endDay = new Date(cachedEvents.now);
+    endDay.setDate(endDay.getDate() + 6);
+  }
+  if(endDay) subtitleEl.textContent = 'I dag til ' + fmtDate(endDay);
 }
 
 function eventTimeLabel(e, day, now){
@@ -352,41 +453,84 @@ function renderWeek(events, days, now, listEl){
       .sort((a,b) => (a.startDate ? a.startDate.getTime() : -Infinity) - (b.startDate ? b.startDate.getTime() : -Infinity));
 
     const label = idx === 0 ? 'I dag' : idx === 1 ? 'I morgen' : dayNamesShort[day.getDay()];
-    html += `<div class="day-group"><p class="day-label">${label} <span class="count">· ${fmtDate(day)}</span></p>`;
+    html += '<div class="day-group"><p class="day-label">' + label + ' <span class="count">· ' + fmtDate(day) + '</span></p>';
 
     if(todaysEvents.length === 0){
-      html += `<p class="day-empty">Ingen events</p>`;
+      html += '<p class="day-empty">Ingen events</p>';
     } else {
       todaysEvents.forEach(e => {
         const ongoing = e.startDate && e.startDate < dayStart;
         const timeStr = eventTimeLabel(e, day, now);
-        html += `
-          <a class="event ${ongoing ? 'ongoing' : ''}" href="${e.link || '#'}" target="_blank" rel="noopener">
-            <div class="event-dot"></div>
-            <div class="event-body">
-              <p class="event-title">${escapeHtml(e.name || 'Event')}</p>
-              <p class="event-time">${timeStr}</p>
-              <p class="event-type">${escapeHtml((e.heading || e.eventType || '').replace(/-/g,' '))}</p>
-            </div>
-          </a>`;
+        html += '\
+          <a class="event ' + (ongoing ? 'ongoing' : '') + '" href="' + (e.link || '#') + '" target="_blank" rel="noopener">\
+            <div class="event-dot"></div>\
+            <div class="event-body">\
+              <p class="event-title">' + escapeHtml(e.name || 'Event') + '</p>\
+              <p class="event-time">' + timeStr + '</p>\
+              <p class="event-type">' + escapeHtml((e.heading || e.eventType || '').replace(/-/g,' ')) + '</p>\
+            </div>\
+          </a>';
         totalShown++;
       });
     }
-    html += `</div>`;
+    html += '</div>';
   });
 
   listEl.innerHTML = totalShown === 0 ? '<div class="status">Ingen events fundet i den kommende uge.</div>' : html;
 }
 
-refreshBtn.addEventListener('click', () => loadEvents(true));
+// ---------- Events tab: everything currently ongoing, with links ----------
+function renderOngoing(events, now, listEl){
+  const ongoing = events
+    .filter(e => {
+      const start = e.startDate, end = e.endDate;
+      if(start && start > now) return false; // hasn't started yet
+      if(end && end < now) return false; // already over
+      return true;
+    })
+    .sort((a,b) => {
+      const aEnd = a.endDate ? a.endDate.getTime() : Infinity;
+      const bEnd = b.endDate ? b.endDate.getTime() : Infinity;
+      return aEnd - bEnd; // soonest-ending first
+    });
+
+  if(ongoing.length === 0){
+    listEl.innerHTML = '<div class="status">Ingen events er i gang lige nu.</div>';
+    return;
+  }
+
+  let html = '';
+  ongoing.forEach(e => {
+    let meta = '';
+    if(e.endDate){
+      meta = 'Slutter ' + fmtDate(e.endDate) + ' kl. ' + fmtTime(e.endDate);
+    } else if(e.startDate){
+      meta = 'Startede ' + fmtDate(e.startDate);
+    }
+    const heading = (e.heading || e.eventType || '').replace(/-/g,' ');
+    html += '\
+      <a class="ev-card" href="' + (e.link || '#') + '" target="_blank" rel="noopener">\
+        ' + (heading ? '<span class="ev-heading">' + escapeHtml(heading) + '</span>' : '') + '\
+        <div class="ev-top">\
+          <p class="ev-title">' + escapeHtml(e.name || 'Event') + '</p>\
+          <div class="ev-arrow">↗</div>\
+        </div>\
+        <p class="ev-meta">' + meta + '</p>\
+      </a>';
+  });
+
+  listEl.innerHTML = html;
+}
+
+refreshBtn.addEventListener('click', function(){ loadEvents(true); });
 loadEvents(false);
 
-document.addEventListener('visibilitychange', () => {
+document.addEventListener('visibilitychange', function(){
   if(document.visibilityState === 'visible') loadEvents(false);
 });
 
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.register('sw.js').catch(function(){});
 }
 </script>
 </body>
