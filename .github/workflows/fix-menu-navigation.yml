@@ -1,6 +1,7 @@
 name: Fix menu navigation
 on:
-  workflow_dispatch:
+  push:
+    branches: [fix/live-overview-wild-dynamax-battles]
 jobs:
   fix:
     runs-on: ubuntu-latest
@@ -15,7 +16,7 @@ jobs:
           p=Path('index.html')
           s=p.read_text()
           marker='<script>\n'
-          patch='''<script>\n(function(){\n  window.goPage=function(p){\n    document.querySelectorAll(".page").forEach(function(x){x.classList.toggle("active",x.id==="p-"+p);});\n    var n={home:["Pokémon GO","GO Uge"],overview:["Oversigt","7 dage"],raids:["Raids","Aktuelle bosses"],wild:["In The Wild","Aktive spawns"],eggs:["Eggs","Alle afstande"],research:["Field Research Tasks","Rewards"],dynamax:["Dynamax","Max Battles"],battles:["Battles","GO Battle League"]}[p];\n    if(n){document.getElementById("title").textContent=n[0];document.getElementById("sub").textContent=n[1];}\n    window.scrollTo(0,0);\n  };\n  document.addEventListener("click",function(e){\n    var el=e.target.closest("[data-p]");\n    if(el){e.preventDefault();window.goPage(el.getAttribute("data-p"));}\n  });\n  window.addEventListener("DOMContentLoaded",function(){\n    document.querySelectorAll(".menu[data-p],.back[data-p]").forEach(function(el){el.type="button";});\n  });\n})();\n'''
+          patch='''<script>\n(function(){\n  window.goPage=function(p){\n    document.querySelectorAll(".page").forEach(function(x){x.classList.toggle("active",x.id==="p-"+p);});\n    var n={home:["Pokémon GO","GO Uge"],overview:["Oversigt","7 dage"],raids:["Raids","Aktuelle bosses"],wild:["In The Wild","Aktive spawns"],eggs:["Eggs","Alle afstande"],research:["Field Research Tasks","Rewards"],dynamax:["Dynamax","Max Battles"],battles:["Battles","GO Battle League"]}[p];\n    if(n){document.getElementById("title").textContent=n[0];document.getElementById("sub").textContent=n[1];}\n    window.scrollTo(0,0);\n  };\n  document.addEventListener("click",function(e){\n    var el=e.target.closest("[data-p]");\n    if(el){e.preventDefault();window.goPage(el.getAttribute("data-p"));}\n  });\n})();\n'''
           if 'window.goPage=function' not in s:
               s=s.replace(marker,patch+marker,1)
           p.write_text(s)
