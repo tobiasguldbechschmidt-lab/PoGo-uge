@@ -1,53 +1,108 @@
-const CACHE = 'pogo-uge-v4';
-const SHELL = ['./manifest.json', './icon.svg'];
+const CACHE_NAME = "pogo-uge-v6";
 
-self.addEventListener('install', (event) => {
-  // Bypass any HTTP cache when precaching, so we always grab fresh files
+const APP_SHELL = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon.svg"
+];
+
+// Install: cache only the static app shell.
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then(cache =>
-      Promise.all(SHELL.map(url => fetch(url, { cache: 'reload' }).then(res => cache.put(url, res))))
-    )
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  // Clean out any old cache versions from previous app updates
+// Activate: remove old app caches and take control immediately.
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+    caches.keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  const url = event.request.url;
+// Fetch strategy:
+// - HTML/navigation: network first, cache fallback.
+// - Static files: cache first, then network.
+// - Live JSON data: network only, so the app gets fresh data.
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
 
-  // Live data: always go straight to the network, never cached
-  if(url.includes('raw.githubusercontent.com')){
-    event.respondWith(fetch(event.request));
-    return;
-  }
+  // Only handle GET requests.
+  if (request.method !== "GET") return;
 
-  // The app page itself (index.html / navigations): network-first.
-  // This is the key fix — it means every time you open the app it tries
-  // to fetch the latest version first, and only falls back to the old
-  // cached copy if you're completely offline.
-  if(event.request.mode === 'navigate' || url.endsWith('index.html') || url.endsWith('/')){
+  const url = new URL(request.url);
+
+  // Never cache live data from the data repositories.
+  const isLiveData =
+    url.hostname === "raw.githubusercontent.com" ||
+    url.pathname.endsWith(".json");
+
+  if (isLiveData) {
     event.respondWith(
-      fetch(event.request, { cache: 'no-store' })
-        .then(res => {
-          caches.open(CACHE).then(cache => cache.put(event.request, res.clone()));
-          return res;
-        })
-        .catch(() => caches.match(event.request))
+      fetch(request).catch(() =>
+        new Response(
+          JSON.stringify({
+            error: true,
+            offline: true,
+            message: "Live data is unavailable offline."
+          }),
+          {
+            status: 503,
+            headers: { "Content-Type": "application/json" }
+          }
+        )
+      )
     );
     return;
   }
 
-  // Other static assets (icon, manifest): cache-first, fall back to network
+  // HTML pages: always try the newest version first.
+  if (request.mode === "navigate" || request.destination === "document") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(request, copy);
+            });
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(request).then(
+            (cached) => cached || caches.match("./index.html")
+          )
+        )
+    );
+    return;
+  }
+
+  // Static assets: use cache first, then fetch and cache.
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(request).then((response) => {
+        if (response.ok && url.origin === self.location.origin) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, copy);
+          });
+        }
+        return response;
+      });
+    })
   );
 });
