@@ -1,0 +1,36 @@
+name: Patch raid player counts
+
+on:
+  push:
+    branches: [fix/raid-player-counts]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch raid cards
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('index.html')
+          s = p.read_text()
+          start = s.index('async function raids(){')
+          end = s.index('async function eggs(){', start)
+          new = '''async function raids(){let b=$("raidsBox");b.innerHTML="<div class=load>Henter raids…</div>";try{let raw=await get(URLS.raids,60000),arr=Object.values(raw||{}).flat().filter(x=>x&&typeof x==="object");arr=arr.filter((r,i,a)=>a.findIndex(x=>x.name===r.name)===i);const players=r=>{let v=r.recommended_players??r.recommendedPlayers??r.min_battle_group_size??r.minBattleGroupSize??r.min_players??r.minPlayers??r.players; if(v!=null)return String(v);let s=String(r.tier||r.level||r.raid_tier||r.name||"").toLowerCase();if(/mega.*legendary|super mega/.test(s))return "7+";if(/mega/.test(s))return "5+";if(/5|legendary|ultra/.test(s))return "4–6";if(/3/.test(s))return "2–3";return "1"};b.innerHTML=arr.length?arr.map(r=>`<div class=card><div class=row><div class=img>${r.asset_url?`<img loading="lazy" src="${esc(r.asset_url)}">`:"⚔️"}</div><div class=grow><div class=name>${esc(r.name)}</div><div class=small>${esc((r.types||[]).join(" · "))} · ${r.shiny_available===true?"Shiny mulig":"Shiny ikke angivet"}</div></div></div><div class=stats><div class=stat><b>${players(r)}</b><span>Spillere</span></div><div class=stat><b>${r.cp_range?.max??"—"}</b><span>Hundo CP</span></div><div class=stat><b>${r.boosted_cp_range?.max??"—"}</b><span>Weather hundo</span></div></div></div>`).join(""):'<div class=empty>Ingen raids.</div>';up()}catch(e){b.innerHTML='<div class=empty>Kunne ikke hente raid-data.</div>'}}
+'''
+          p.write_text(s[:start] + new + s[end:])
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "feat: show raid player counts [skip ci]"
+          git push
