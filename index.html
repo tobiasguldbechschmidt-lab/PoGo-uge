@@ -104,12 +104,12 @@
   .viewport{ overflow:hidden; }
   .track{
     display:flex;
-    width:300%;
+    width:400%;
     transition: transform 0.28s cubic-bezier(.25,.9,.35,1);
   }
   .track.dragging{ transition:none; }
   .panel{
-    width:33.3333%;
+    width:25%;
     flex:none;
   }
 
@@ -186,6 +186,32 @@
     border-radius:6px; padding:2px 6px; margin-bottom:6px;
   }
 
+  /* Shiny odds cards */
+  .shiny-card{
+    background:var(--card2); border:1px solid var(--line);
+    border-radius:14px; padding:12px 13px; margin-bottom:8px;
+  }
+  .shiny-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .shiny-title{ font-size:14px; font-weight:600; margin:0 0 4px; flex:1; }
+  .shiny-odds{
+    flex:none; font-size:12.5px; font-weight:800;
+    color:#1c1330; background:var(--gold);
+    border-radius:8px; padding:3px 8px;
+    white-space:nowrap;
+  }
+  .shiny-odds.unsure{ background:var(--card); color:var(--muted); border:1px solid var(--line); }
+  .shiny-note{ font-size:11.5px; color:var(--muted); margin:0; line-height:1.4; }
+  .shiny-heading{
+    display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.4px; color:var(--gold); background:rgba(255,203,5,0.1);
+    border-radius:6px; padding:2px 6px; margin-bottom:6px;
+  }
+  .shiny-disclaimer{
+    font-size:10.5px; color:var(--muted); line-height:1.5;
+    background:var(--card2); border:1px solid var(--line);
+    border-radius:14px; padding:10px 12px; margin-top:4px;
+  }
+
   .footer{
     padding:10px 16px 14px; border-top:1px solid var(--line);
     font-size:10.5px; color:var(--muted); text-align:center;
@@ -215,6 +241,7 @@
         <div class="tab active" data-index="0">Denne uge</div>
         <div class="tab" data-index="1">Live nu</div>
         <div class="tab" data-index="2">Events</div>
+        <div class="tab" data-index="3">Shiny</div>
       </div>
     </div>
 
@@ -268,6 +295,12 @@
           </div>
         </div>
 
+        <div class="panel">
+          <div class="list" id="listShiny">
+            <div class="status">Henter events i gang …</div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -293,7 +326,9 @@ const TAB_META = [
   { title: 'Denne uge i GO', subtitle: null },
   { title: 'Live lige nu', subtitle: 'Genveje til opdaterede live-kilder' },
   { title: 'Events i gang', subtitle: 'Alt der kører lige nu, med link til detaljer' },
+  { title: 'Shiny-chance nu', subtitle: 'Estimerede odds for events i gang lige nu' },
 ];
+const PANEL_COUNT = TAB_META.length;
 
 let currentIndex = 0;
 let cachedEvents = null; // shared between week + events panels
@@ -310,10 +345,10 @@ function escapeHtml(str){ const d = document.createElement('div'); d.textContent
 
 // ---------- Tab switching (click + swipe share this) ----------
 function goToIndex(idx, animate){
-  idx = Math.max(0, Math.min(2, idx));
+  idx = Math.max(0, Math.min(PANEL_COUNT - 1, idx));
   currentIndex = idx;
   track.style.transition = (animate === false) ? 'none' : '';
-  track.style.transform = 'translateX(' + (-idx * (100/3)) + '%)';
+  track.style.transform = 'translateX(' + (-idx * (100/PANEL_COUNT)) + '%)';
   tabs.forEach((t,i) => t.classList.toggle('active', i === idx));
   const meta = TAB_META[idx];
   titleEl.textContent = meta.title;
@@ -351,8 +386,8 @@ viewport.addEventListener('touchmove', function(e){
 
   e.preventDefault();
   dragDeltaX = dx;
-  const basePercent = -currentIndex * (100/3);
-  const dragPercent = (dx / viewport.offsetWidth) * (100/3);
+  const basePercent = -currentIndex * (100/PANEL_COUNT);
+  const dragPercent = (dx / viewport.offsetWidth) * (100/PANEL_COUNT);
   track.style.transform = 'translateX(' + (basePercent + dragPercent) + '%)';
 }, { passive: false });
 
@@ -376,6 +411,7 @@ async function loadEvents(isManual){
   if(isManual) refreshBtn.classList.add('spinning');
   const listWeekEl = document.getElementById('listWeek');
   const listEventsEl = document.getElementById('listEvents');
+  const listShinyEl = document.getElementById('listShiny');
   try{
     const res = await fetch(EVENTS_URL + '?t=' + Date.now(), {cache:'no-store'});
     if(!res.ok) throw new Error('HTTP ' + res.status);
@@ -401,11 +437,13 @@ async function loadEvents(isManual){
 
     renderWeek(events, days, now, listWeekEl);
     renderOngoing(events, now, listEventsEl);
+    renderShinyOdds(events, now, listShinyEl);
     if(currentIndex === 0) updateWeekSubtitle(days[6]);
     updatedEl.textContent = 'Opdateret ' + now.toLocaleDateString('da-DK') + ' ' + fmtTime(now);
   }catch(err){
     listWeekEl.innerHTML = '<div class="status">Kunne ikke hente data lige nu.<br>Tjek din forbindelse og prøv igen.</div>';
     listEventsEl.innerHTML = '<div class="status">Kunne ikke hente data lige nu.<br>Tjek din forbindelse og prøv igen.</div>';
+    listShinyEl.innerHTML = '<div class="status">Kunne ikke hente data lige nu.<br>Tjek din forbindelse og prøv igen.</div>';
     console.error(err);
   }finally{
     if(isManual) refreshBtn.classList.remove('spinning');
@@ -518,6 +556,72 @@ function renderOngoing(events, now, listEl){
         <p class="ev-meta">' + meta + '</p>\
       </a>';
   });
+
+  listEl.innerHTML = html;
+}
+
+// ---------- Shiny tab: estimated odds for whatever is ongoing right now ----------
+// These are community-researched estimates (Silph Road / GO Hub), not official
+// Niantic numbers — Niantic never publishes exact shiny rates.
+const SHINY_RULES = [
+  { match: /community[- ]?day/i, odds: '~1/25', note: 'Boostet i hele eventperioden for det udvalgte Community Day-Pokémon.' },
+  { match: /raid[- ]?day/i, odds: '~1/64', note: 'Raid Day boostet ofte shiny-chancen tydeligt for dagens raid-boss.' },
+  { match: /research[- ]?day/i, odds: '~1/64', note: 'Research Day-Pokémon har historisk haft boostede shiny-odds.' },
+  { match: /go[- ]?fest/i, odds: '~1/64', note: 'GO Fest har historisk haft markant boostede odds ift. normal vild-rate.' },
+  { match: /hatch[- ]?day/i, odds: '~1/64', note: 'Hatch Day-æg har historisk haft boostede shiny-odds ved klækning.' },
+  { match: /spotlight/i, odds: '~1/512', note: 'Spotlight Hour boosterer normalt ikke selve shiny-chancen, kun spawn-rate og en bonus.' },
+  { match: /raid[- ]?(hour|battles?)/i, odds: '1/20 (Legendary) · 1/64 (Mega)', note: 'Legendary raid-bosses ligger typisk omkring 1/20, Mega-raids omkring 1/64.' },
+  { match: /max[- ]?(monday|battle|mondays)/i, odds: 'Ukendt', note: 'Der findes endnu ikke pålidelige, offentliggjorte tal for shiny-odds i Max Battles.' },
+  { match: /egg/i, odds: '~1/500', note: 'Almindelige æg ligger omkring samme rate som vilde spawns.' },
+];
+const DEFAULT_SHINY = { odds: '~1/512', note: 'Standard baggrundsrate for de fleste vilde Pokémon, medmindre eventbeskrivelsen selv nævner en boost.' };
+
+function lookupShiny(event){
+  const haystack = ((event.eventType || '') + ' ' + (event.heading || '') + ' ' + (event.name || ''));
+  for(const rule of SHINY_RULES){
+    if(rule.match.test(haystack)) return { odds: rule.odds, note: rule.note };
+  }
+  return DEFAULT_SHINY;
+}
+
+function renderShinyOdds(events, now, listEl){
+  const ongoing = events
+    .filter(e => {
+      const start = e.startDate, end = e.endDate;
+      if(start && start > now) return false;
+      if(end && end < now) return false;
+      return true;
+    })
+    .sort((a,b) => {
+      const aEnd = a.endDate ? a.endDate.getTime() : Infinity;
+      const bEnd = b.endDate ? b.endDate.getTime() : Infinity;
+      return aEnd - bEnd;
+    });
+
+  let html = '';
+  if(ongoing.length === 0){
+    html = '<div class="status">Ingen events er i gang lige nu — standard vild-rate er ~1/512.</div>';
+  } else {
+    ongoing.forEach(e => {
+      const shiny = lookupShiny(e);
+      const heading = (e.heading || e.eventType || '').replace(/-/g,' ');
+      const unsureClass = shiny.odds === 'Ukendt' ? ' unsure' : '';
+      html += '\
+        <div class="shiny-card">\
+          ' + (heading ? '<span class="shiny-heading">' + escapeHtml(heading) + '</span>' : '') + '\
+          <div class="shiny-top">\
+            <p class="shiny-title">' + escapeHtml(e.name || 'Event') + '</p>\
+            <span class="shiny-odds' + unsureClass + '">' + shiny.odds + '</span>\
+          </div>\
+          <p class="shiny-note">' + shiny.note + '</p>\
+        </div>';
+    });
+  }
+
+  html += '\
+    <div class="shiny-disclaimer">\
+      Alle tal er community-estimater (bl.a. fra Silph Road og Pokémon GO Hub) — Niantic offentliggør aldrig præcise shiny-rater. En rate på fx 1/512 er en selvstændig chance hver gang, ikke en garanti efter så mange forsøg.\
+    </div>';
 
   listEl.innerHTML = html;
 }
