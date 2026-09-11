@@ -1,9 +1,6 @@
 name: Update raid details
 on:
-  workflow_dispatch:
   push:
-    paths:
-      - scripts/raid_detail_update.py
 jobs:
   update:
     runs-on: ubuntu-latest
