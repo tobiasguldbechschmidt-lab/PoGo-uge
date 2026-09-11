@@ -3,6 +3,8 @@ import re
 
 p=Path('index.html')
 s=p.read_text()
+if 'data-raid-tab' in s:
+    raise SystemExit(0)
 old=re.search(r'async function raids\(\)\{.*?\n\}\nasync function wild\(\)',s,re.S)
 if not old:
     raise SystemExit('raids function not found')
@@ -13,4 +15,3 @@ s=s[:old.start()]+new+s[old.end():]
 css='''.raid-tabs{display:flex;gap:8px;margin:0 0 12px}.raid-tab{flex:1;padding:10px 8px;border:1px solid var(--l);border-radius:12px;background:var(--c);color:var(--m);font-weight:800}.raid-tab.active{background:var(--y);color:#111}'''
 s=s.replace('</style></head>','</style><style id="raid-tabs-css">'+css+'</style></head>',1)
 p.write_text(s)
-'''
