@@ -1,8 +1,5 @@
 name: Apply raid counter fix
-on:
-  push:
-    paths:
-      - 'scripts/fix_raid_counters.py'
+on: push
 jobs:
   apply:
     runs-on: ubuntu-latest
