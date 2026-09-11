@@ -1,8 +1,7 @@
 from pathlib import Path
-import re
 p=Path('index.html')
 s=p.read_text()
-start=s.index('async function raids(){')
+start=s.index('const RAID_WEAK={')
 end=s.index('async function wild(){', start)
 new=r'''const RAID_WEAK={
   Normal:['Fighting'],Fire:['Water','Ground','Rock'],Water:['Electric','Grass'],Electric:['Ground'],Grass:['Fire','Ice','Poison','Flying','Bug'],Ice:['Fire','Fighting','Rock','Steel'],Fighting:['Flying','Psychic','Fairy'],Poison:['Ground','Psychic'],Ground:['Water','Grass','Ice'],Flying:['Electric','Ice','Rock'],Psychic:['Bug','Ghost','Dark'],Bug:['Fire','Flying','Rock'],Rock:['Water','Grass','Fighting','Ground','Steel'],Ghost:['Ghost','Dark'],Dragon:['Ice','Dragon','Fairy'],Dark:['Fighting','Bug','Fairy'],Steel:['Fire','Fighting','Ground'],Fairy:['Poison','Steel']
@@ -45,5 +44,3 @@ async function raids(){let b=$('raids');try{let raw=await get(U.raids,60000),n=[
 '''
 s=s[:start]+new+s[end:]
 p.write_text(s)
-# trigger a second push so the workflow can run
-p.write_text(p.read_text()+'\n# trigger\n')
