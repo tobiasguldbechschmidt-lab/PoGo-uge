@@ -1,279 +1,35 @@
 <!DOCTYPE html>
-<html lang="da">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0d1b2a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="GO Uge">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon.svg">
-<title>Pokémon GO</title>
+<html lang="da"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#08111d"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg"><title>GO Uge</title>
 <style>
-:root{
-  --bg:#08111d;--panel:#0f1d2d;--card:#14263b;--card2:#19314b;
-  --line:#274764;--text:#f2f6fa;--muted:#9db2c7;--gold:#ffcb05;
-  --red:#e3350d;--blue:#5fb3f0;--green:#5fd88f;--purple:#a78bfa;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% -10%,#203c5a 0,#08111d 58%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",sans-serif}
-body{padding:max(10px,env(safe-area-inset-top)) 12px max(14px,env(safe-area-inset-bottom))}
-button{font:inherit}
-.app{width:100%;max-width:480px;margin:auto}
-.shell{background:var(--panel);border:1px solid var(--line);border-radius:24px;overflow:hidden;box-shadow:0 22px 70px #0008;min-height:calc(100vh - 24px)}
-header{position:sticky;top:0;z-index:10;padding:15px 16px 12px;background:linear-gradient(180deg,#172b42f2,#0f1d2df2);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-.headrow{display:flex;align-items:center;gap:10px}
-.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text);display:grid;place-items:center;cursor:pointer}
-.logo{width:34px;height:34px;border-radius:50%;background:linear-gradient(#e3350d 0 46%,#08111d 46% 54%,#fff 54%);border:2px solid #08111d;position:relative}
-.logo:after{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;background:#fff;border:2px solid #08111d;border-radius:50%}
-.headtitle{min-width:0;flex:1}.headtitle h1{font-size:17px;margin:0;font-weight:800}.headtitle p{font-size:11px;color:var(--muted);margin:2px 0 0}
-main{padding:16px}
-.page{display:none}.page.active{display:block}
-.hero{padding:4px 2px 16px}.hero h2{margin:0 0 5px;font-size:24px}.hero p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
-.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.menu-card{border:1px solid var(--line);background:linear-gradient(145deg,var(--card2),var(--card));border-radius:17px;padding:16px;min-height:108px;text-align:left;color:var(--text);cursor:pointer;transition:.15s}
-.menu-card:active{transform:scale(.98)}.menu-icon{font-size:25px;margin-bottom:10px}.menu-title{font-weight:800;font-size:14px}.menu-desc{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.35}
-.section-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 10px}
-.section-title h3{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--gold);margin:0}
-.badge{font-size:10px;border-radius:8px;padding:4px 7px;background:#ffcb0518;color:var(--gold);border:1px solid #ffcb0530}
-.back{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--gold);padding:0 0 13px;cursor:pointer;font-weight:700}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;margin-bottom:9px}
-.row{display:flex;gap:12px;align-items:center}.grow{flex:1;min-width:0}
-.name{font-weight:800;font-size:14px}.small{font-size:11px;color:var(--muted);line-height:1.45}.muted{color:var(--muted)}
-.pokeimg{width:58px;height:58px;object-fit:contain;background:#0b1725;border-radius:14px;border:1px solid var(--line);padding:4px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}
-.stat{background:#0c1928;border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}.stat b{display:block;font-size:12px}.stat span{font-size:9px;color:var(--muted)}
-.chiprow{display:flex;gap:7px;overflow:auto;padding:2px 0 10px}.chip{white-space:nowrap;border:1px solid var(--line);background:var(--card);color:var(--muted);border-radius:999px;padding:7px 10px;font-size:11px;cursor:pointer}.chip.active{color:#111;background:var(--gold);border-color:var(--gold)}
-.list{display:grid;gap:9px}
-.event-date{font-size:11px;color:var(--gold);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin:12px 2px 6px}
-.event-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-.event-top{display:flex;gap:8px}.dot{width:8px;height:8px;border-radius:50%;background:var(--red);margin-top:5px;flex:none}.dot.live{background:var(--green)}
-.linkrow{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;cursor:pointer}
-.linkrow .emoji{font-size:21px}.arrow{margin-left:auto;color:var(--muted)}
-.note{background:#112237;border:1px solid var(--line);border-radius:14px;padding:11px;font-size:11px;color:var(--muted);line-height:1.5;margin-top:10px}
-.loading,.empty{padding:28px 10px;text-align:center;color:var(--muted);font-size:12px}.spinner{display:inline-block;width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-footer{padding:12px 16px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);text-align:center}
-@media(max-width:360px){.menu-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr 1fr}}
-</style>
-</head>
-<body>
-<div class="app"><div class="shell">
-<header>
-  <div class="headrow">
-    <button class="iconbtn" id="menuBtn" aria-label="Menu">☰</button>
-    <div class="logo"></div>
-    <div class="headtitle"><h1 id="pageTitle">Pokémon GO</h1><p id="pageSubtitle">GO Uge</p></div>
-    <button class="iconbtn" id="refreshBtn" aria-label="Opdater">↻</button>
-  </div>
-</header>
-
-<main>
-<section class="page active" id="home">
-  <div class="hero"><h2>Menu</h2><p>Find alt det vigtigste om Pokémon GO samlet ét sted.</p></div>
-  <div class="menu-grid">
-    <button class="menu-card" data-page="overview"><div class="menu-icon">📅</div><div class="menu-title">Oversigt</div><div class="menu-desc">Events i dag og de næste 7 dage.</div></button>
-    <button class="menu-card" data-page="raids"><div class="menu-icon">⚔️</div><div class="menu-title">Raids</div><div class="menu-desc">Raid-bosses, shiny og hundo CP.</div></button>
-    <button class="menu-card" data-page="wild"><div class="menu-icon">🌿</div><div class="menu-title">In The Wild</div><div class="menu-desc">Wild, Lures og Incense.</div></button>
-    <button class="menu-card" data-page="eggs"><div class="menu-icon">🥚</div><div class="menu-title">Eggs</div><div class="menu-desc">Æg, shiny, CP og event-bonusser.</div></button>
-    <button class="menu-card" data-page="research"><div class="menu-icon">🔎</div><div class="menu-title">Field Research Tasks</div><div class="menu-desc">Tasks og rewards fra research.</div></button>
-    <button class="menu-card" data-page="dynamax"><div class="menu-icon">💥</div><div class="menu-title">Dynamax</div><div class="menu-desc">Max Battles og Pokémon.</div></button>
-    <button class="menu-card" data-page="battles"><div class="menu-icon">🏆</div><div class="menu-title">Battles</div><div class="menu-desc">GO Battle League og cups.</div></button>
-  </div>
-</section>
-
-<section class="page" id="overview">
-  <button class="back" data-page="home">← Menu</button>
-  <div class="hero"><h2>Oversigt</h2><p>Events fra i dag og frem til 7 dage fra nu.</p></div>
-  <div id="events" class="list"><div class="loading"><span class="spinner"></span></div></div>
-</section>
-
-<section class="page" id="raids">
-  <button class="back" data-page="home">← Menu</button>
-  <div class="hero"><h2>Raids</h2><p>Aktuelle raid-bosses. CP og shiny vises, når kilden leverer oplysningerne.</p></div>
-  <div id="raidList" class="list"><div class="loading"><span class="spinner"></span></div></div>
-  <div class="note">Shiny-rate er ikke en officiel Niantic-værdi. Appen viser kun en rate, når datakilden har en værdi. Hundo CP beregnes ikke gætvis.</div>
-</section>
-
-<section class="page" id="wild">
-  <button class="back" data-page="home">← Menu</button>
-  <div class="hero"><h2>In The Wild</h2><p>Spawns fra vilde encounters, Lures og Incense.</p></div>
-  <div class="chiprow" id="wildTabs">
-    <button class="chip active" data-wild="wild">Wild</button><button class="chip" data-wild="lure">Lures</button><button class="chip" data-wild="incense">Incense</button>
-  </div>
-  <div id="wildContent"></div>
-</section>
-
-<section class="page" id="eggs">
-  <button class="back" data-page="wild">← In The Wild</button>
-  <div class="hero"><h2>Eggs</h2><p>Aktuel egg pool opdelt efter distance.</p></div>
-  <div id="eggList"><div class="loading"><span class="spinner"></span></div></div>
-</section>
-
-<section class="page" id="research">
-  <button class="back" data-page="eggs">← Eggs</button>
-  <div class="hero"><h2>Field Research Tasks</h2><p>Tilgængelige research tasks og deres rewards.</p></div>
-  <div id="researchList"><div class="loading"><span class="spinner"></span></div></div>
-</section>
-
-<section class="page" id="dynamax">
-  <button class="back" data-page="research">← Field Research</button>
-  <div class="hero"><h2>Dynamax</h2><p>Max Battles. Datafeltet er gjort klar til live Max Battle-data.</p></div>
-  <div id="maxList"></div>
-</section>
-
-<section class="page" id="battles">
-  <button class="back" data-page="home">← Menu</button>
-  <div class="hero"><h2>Battles</h2><p>GO Battle League og aktuelle cups.</p></div>
-  <div id="battleList"></div>
-</section>
-</main>
-
-<footer>Data opdateres fra offentlige Pokémon GO-datakilder · <span id="updated">Ikke opdateret endnu</span></footer>
-</div></div>
-
+:root{--bg:#08111d;--p:#0f1d2d;--c:#14263b;--c2:#19314b;--l:#274764;--t:#f2f6fa;--m:#9db2c7;--g:#ffcb05;--gr:#5fd88f}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;background:radial-gradient(circle at 50% -10%,#203c5a,#08111d 58%);color:var(--t);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{padding:10px 12px 14px}.app{max-width:500px;margin:auto}.shell{background:var(--p);border:1px solid var(--l);border-radius:24px;overflow:hidden;min-height:calc(100vh - 24px);box-shadow:0 22px 70px #0008}header{position:sticky;top:0;z-index:5;padding:14px 16px;background:#102238f5;border-bottom:1px solid var(--l);backdrop-filter:blur(12px)}.head{display:flex;align-items:center;gap:10px}.btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--l);background:var(--c);color:var(--t);cursor:pointer}.logo{width:34px;height:34px;border-radius:50%;background:linear-gradient(#e3350d 0 46%,#08111d 46% 54%,#fff 54%);border:2px solid #08111d;position:relative}.logo:after{content:"";position:absolute;width:9px;height:9px;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border:2px solid #08111d;border-radius:50%}.title{flex:1;min-width:0}.title b{display:block;font-size:17px}.title span{font-size:11px;color:var(--m)}main{padding:16px}.page{display:none}.page.active{display:block}.hero{padding:3px 2px 15px}.hero h2{margin:0 0 5px;font-size:24px}.hero p{margin:0;color:var(--m);font-size:13px;line-height:1.5}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.menu{border:1px solid var(--l);background:linear-gradient(145deg,var(--c2),var(--c));border-radius:17px;padding:15px;min-height:105px;text-align:left;color:var(--t);cursor:pointer}.menu i{font-size:24px;display:block;margin-bottom:9px;font-style:normal}.menu b{font-size:14px}.menu small{display:block;color:var(--m);font-size:11px;line-height:1.35;margin-top:4px}.back{border:0;background:transparent;color:var(--g);font-weight:800;padding:0 0 12px;cursor:pointer}.card{background:var(--c);border:1px solid var(--l);border-radius:15px;padding:12px;margin-bottom:9px}.name{font-weight:800;font-size:14px}.small{font-size:11px;color:var(--m);line-height:1.45}.section{font-size:12px;color:var(--g);font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin:14px 2px 7px}.row{display:flex;gap:11px;align-items:center}.grow{flex:1;min-width:0}.img{width:56px;height:56px;border-radius:13px;background:#0b1725;border:1px solid var(--l);display:grid;place-items:center;overflow:hidden}.img img{width:100%;height:100%;object-fit:contain}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.stat{background:#0c1928;border:1px solid var(--l);border-radius:10px;padding:7px;text-align:center}.stat b{display:block;font-size:11px}.stat span{font-size:9px;color:var(--m)}.eventdate{font-size:11px;color:var(--g);font-weight:800;text-transform:uppercase;margin:12px 2px 6px}.dot{width:8px;height:8px;border-radius:50%;background:#e3350d;margin-top:5px;flex:none}.dot.live{background:var(--gr)}.chips{display:flex;gap:7px;overflow:auto;padding:2px 0 10px}.chip{white-space:nowrap;border:1px solid var(--l);background:var(--c);color:var(--m);border-radius:999px;padding:8px 11px;font-size:11px;cursor:pointer}.chip.active{background:var(--g);color:#111}.note{background:#112237;border:1px solid var(--l);border-radius:14px;padding:11px;color:var(--m);font-size:11px;line-height:1.5;margin-top:10px}.load,.empty{text-align:center;color:var(--m);padding:30px 10px;font-size:12px}footer{padding:12px 16px;border-top:1px solid var(--l);font-size:10px;color:var(--m);text-align:center}@media(max-width:360px){.grid{grid-template-columns:1fr}}
+</style></head><body><div class="app"><div class="shell"><header><div class="head"><button class="btn" id="menuBtn">☰</button><div class="logo"></div><div class="title"><b id="pt">Pokémon GO</b><span id="ps">GO Uge</span></div><button class="btn" id="refresh">↻</button></div></header><main>
+<section class="page active" id="home"><div class="hero"><h2>Menu</h2><p>Alt det vigtigste om Pokémon GO samlet ét sted.</p></div><div class="grid">
+<button class="menu" data-p="overview"><i>📅</i><b>Oversigt</b><small>Events næste 7 dage.</small></button><button class="menu" data-p="raids"><i>⚔️</i><b>Raids</b><small>Normale + Shadow, shiny og hundo CP.</small></button><button class="menu" data-p="wild"><i>🌿</i><b>In The Wild</b><small>Wild, Lures og Incense.</small></button><button class="menu" data-p="eggs"><i>🥚</i><b>Eggs</b><small>Pool, shiny og hundo CP.</small></button><button class="menu" data-p="research"><i>🔎</i><b>Field Research Tasks</b><small>Event + normale tasks.</small></button><button class="menu" data-p="dynamax"><i>💥</i><b>Dynamax</b><small>Aktuelle Max Battles.</small></button><button class="menu" data-p="battles"><i>🏆</i><b>Battles</b><small>GBL leagues, cups og rewards.</small></button>
+</div></section>
+<section class="page" id="overview"><button class="back" data-p="home">← Menu</button><div class="hero"><h2>Oversigt</h2><p>Alle events fra i dag og 7 dage frem.</p></div><div id="events" class="load">Henter…</div></section>
+<section class="page" id="raids"><button class="back" data-p="home">← Menu</button><div class="hero"><h2>Raids</h2><p>Aktuelle bosses inklusive Shadow raids.</p></div><div id="raids" class="load">Henter…</div><div class="note">Shiny odds er estimater: 5-star Legendary/Mythical/Ultra Beast ca. 1/20; øvrige shiny-eligible raids typisk ca. 1/64. Event-dage kan ændre odds.</div></section>
+<section class="page" id="wild"><button class="back" data-p="home">← Menu</button><div class="hero"><h2>In The Wild</h2><p>Vælg en underkategori.</p></div><div class="chips"><button class="chip active" data-w="wild">Wild</button><button class="chip" data-w="lure">Lures</button><button class="chip" data-w="incense">Incense</button></div><div id="wildBox"></div></section>
+<section class="page" id="eggs"><button class="back" data-p="home">← Menu</button><div class="hero"><h2>Eggs</h2><p>Egg pool med shiny og beregnet hundo CP.</p></div><div id="eggs" class="load">Henter…</div><div class="note">Æg har normalt 10/10/10 IV-floor: hundo chance 1/216. Standard shiny rate for æg er ca. 1/64; events kan booste den.</div></section>
+<section class="page" id="research"><button class="back" data-p="home">← Menu</button><div class="hero"><h2>Field Research Tasks</h2><p>Event tasks og normale Field Research er adskilt.</p></div><div id="research" class="load">Henter…</div></section>
+<section class="page" id="dynamax"><button class="back" data-p="home">← Menu</button><div class="hero"><h2>Dynamax</h2><p>Aktuelle Max Battles.</p></div><div id="max" class="load">Henter…</div></section>
+<section class="page" id="battles"><button class="back" data-p="home">← Menu</button><div class="hero"><h2>Battles</h2><p>GO Battle League Season 28.</p></div><div id="battleBox"></div></section>
+</main><footer>Data opdateres fra offentlige Pokémon GO-kilder · <span id="upd">—</span></footer></div></div>
 <script>
-const API="https://raw.githubusercontent.com/zhenga8533/leak-duck/data/";
-const EVENTS_URL=API+"events.json";
-const RAIDS_URL=API+"raid_bosses.json";
-const EGGS_URL=API+"egg_pool.json";
-const RESEARCH_URL=API+"research_tasks.json";
-const pokeImg=n=>`https://raw.githubusercontent.com/WatWowMap/pogo-data-api/main/data/v1/pokemon/${n}.json`;
-
-let current="home", eventsCache=null, raidsCache=null, eggsCache=null, researchCache=null;
-
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-const dateOf=x=>x?new Date(x):null;
-const fmt=d=>d?d.toLocaleDateString("da-DK",{weekday:"short",day:"numeric",month:"short"}):"";
-const time=d=>d?d.toLocaleTimeString("da-DK",{hour:"2-digit",minute:"2-digit"}):"";
-const now=()=>new Date();
-
-function show(page){
-  current=page;
-  document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===page));
-  const names={home:["Pokémon GO","GO Uge"],overview:["Oversigt","Events næste 7 dage"],raids:["Raids","Aktuelle raid-bosses"],wild:["In The Wild","Wild, Lures og Incense"],eggs:["Eggs","Aktuel egg pool"],research:["Field Research Tasks","Research rewards"],dynamax:["Dynamax","Max Battles"],battles:["Battles","GO Battle League"]};
-  $("pageTitle").textContent=names[page][0];$("pageSubtitle").textContent=names[page][1];
-  window.scrollTo({top:0,behavior:"smooth"});
-  if(page==="overview")loadEvents();
-  if(page==="raids")loadRaids();
-  if(page==="eggs")loadEggs();
-  if(page==="research")loadResearch();
-  if(page==="wild")renderWild("wild");
-  if(page==="dynamax")renderMax();
-  if(page==="battles")renderBattles();
-}
-document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.page)));
-$("menuBtn").onclick=()=>show("home");
-$("refreshBtn").onclick=()=>{if(current==="overview")loadEvents(true);else if(current==="raids")loadRaids(true);else if(current==="eggs")loadEggs(true);else if(current==="research")loadResearch(true);else {loadEvents(true);}};
-function setUpdated(){ $("updated").textContent="Opdateret "+time(now()); }
-
-async function get(url){
-  const r=await fetch(url+"?t="+Date.now(),{cache:"no-store"});
-  if(!r.ok)throw new Error("HTTP "+r.status);
-  return r.json();
-}
-
-async function loadEvents(){
-  $("events").innerHTML='<div class="loading"><span class="spinner"></span></div>';
-  try{
-    const raw=eventsCache||await get(EVENTS_URL);eventsCache=raw;
-    const n=now(), end=new Date(n);end.setDate(end.getDate()+7);
-    const ev=raw.map(e=>({...e,startDate:dateOf(e.start),endDate:dateOf(e.end)}))
-      .filter(e=>(!e.startDate||e.startDate<=end)&&(!e.endDate||e.endDate>=n))
-      .filter(e=>!["season","update"].includes(e.eventType||e.type))
-      .sort((a,b)=>(a.startDate||new Date(0))-(b.startDate||new Date(0)));
-    let html="",last="";
-    ev.forEach(e=>{
-      const d=fmt(e.startDate||e.endDate);
-      if(d!==last){html+=`<div class="event-date">${esc(d||"Uden dato")}</div>`;last=d}
-      const live=(!e.startDate||e.startDate<=n)&&(!e.endDate||e.endDate>=n);
-      html+=`<div class="event-card"><div class="event-top"><span class="dot ${live?"live":""}"></span><div class="grow"><div class="name">${esc(e.name||"Event")}</div><div class="small">${e.startDate?time(e.startDate):""}${e.endDate?" – "+time(e.endDate):""}${live?" · I gang nu":""}</div><div class="small">${esc((e.heading||e.eventType||e.type||"").replaceAll("-"," "))}</div></div></div></div>`;
-    });
-    $("events").innerHTML=html||'<div class="empty">Ingen events fundet i perioden.</div>';setUpdated();
-  }catch(e){$("events").innerHTML='<div class="empty">Kunne ikke hente event-data. Prøv ↻ igen.</div>'}
-}
-
-async function loadRaids(){
-  $("raidList").innerHTML='<div class="loading"><span class="spinner"></span></div>';
-  try{
-    const raw=raidsCache||await get(RAIDS_URL);raidsCache=raw;
-    const groups=raw&&typeof raw==="object"?raw:{};
-    let html="";
-    Object.entries(groups).forEach(([tier,list])=>{
-      if(!Array.isArray(list))return;
-      html+=`<div class="section-title"><h3>${esc(tier)}</h3></div>`;
-      list.forEach(r=>{
-        const c=r.cp_range||{},b=r.boosted_cp_range||{};
-        html+=`<div class="card"><div class="row">
-          <div class="pokeimg">${r.asset_url?`<img src="${esc(r.asset_url)}" alt="" style="width:100%;height:100%;object-fit:contain">`:"⚪"}</div>
-          <div class="grow"><div class="name">${esc(r.name)}</div><div class="small">${r.shiny_available===true?"✨ Shiny tilgængelig":r.shiny_available===false?"Shiny ikke angivet":""}</div></div>
-        </div>
-        <div class="stats">
-          <div class="stat"><b>${c.min??"—"}–${c.max??"—"}</b><span>CP normal</span></div>
-          <div class="stat"><b>${b.min??"—"}–${b.max??"—"}</b><span>CP boosted</span></div>
-          <div class="stat"><b>${r.shiny_available===true?"Se kilde":"—"}</b><span>Shiny</span></div>
-        </div></div>`;
-      });
-    });
-    $("raidList").innerHTML=html||'<div class="empty">Ingen raid-data fundet.</div>';setUpdated();
-  }catch(e){$("raidList").innerHTML='<div class="empty">Kunne ikke hente raid-data. Prøv ↻ igen.</div>'}
-}
-
-async function loadEggs(){
-  $("eggList").innerHTML='<div class="loading"><span class="spinner"></span></div>';
-  try{
-    const raw=eggsCache||await get(EGGS_URL);eggsCache=raw;
-    let html="";
-    Object.entries(raw||{}).forEach(([distance,list])=>{
-      if(!Array.isArray(list))return;
-      html+=`<div class="section-title"><h3>${esc(distance)}</h3></div>`;
-      list.forEach(p=>{html+=`<div class="card"><div class="row"><div class="grow"><div class="name">${esc(p.name||p.pokemon||"Pokémon")}</div><div class="small">${p.shiny_available===true?"✨ Shiny tilgængelig":"Shiny-rate ikke angivet af kilden"}</div></div><span class="badge">Æg</span></div></div>`});
-    });
-    $("eggList").innerHTML=html||'<div class="empty">Ingen egg-data fundet.</div>';setUpdated();
-  }catch(e){$("eggList").innerHTML='<div class="empty">Kunne ikke hente egg-data. Prøv ↻ igen.</div>'}
-}
-
-async function loadResearch(){
-  $("researchList").innerHTML='<div class="loading"><span class="spinner"></span></div>';
-  try{
-    const raw=researchCache||await get(RESEARCH_URL);researchCache=raw;
-    const list=Array.isArray(raw)?raw:Object.values(raw||{}).flat();
-    let html="";
-    list.slice(0,150).forEach(q=>{
-      const task=q.task||q.name||q.text||"Research task";
-      const rewards=q.rewards||q.reward||q.possible_rewards||[];
-      html+=`<div class="card"><div class="name">${esc(task)}</div><div class="small" style="margin-top:5px">${esc(Array.isArray(rewards)?rewards.map(x=>typeof x==="string"?x:(x.name||"Reward")).join(", "):String(rewards||"Reward ikke angivet"))}</div></div>`;
-    });
-    $("researchList").innerHTML=html||'<div class="empty">Ingen research-data fundet.</div>';setUpdated();
-  }catch(e){$("researchList").innerHTML='<div class="empty">Kunne ikke hente research-data. Prøv ↻ igen.</div>'}
-}
-
-const WILD_DATA={
-  wild:{title:"Wild",text:"Wild-spawns er ikke et globalt fast datasæt. Event-data kan udvides her, når der findes en struktureret kilde.",items:["Event-spawns","Seasonal spawns","Biome-spawns"]},
-  lure:{title:"Lure Modules",text:"Lure-pools varierer efter lure-type og event.",items:["Normal Lure Module","Glacial Lure Module","Mossy Lure Module","Magnetic Lure Module","Rainy Lure Module","Golden Lure Module"]},
-  incense:{title:"Incense",text:"Incense-pool afhænger af aktiv sæson/event. Daily Adventure Incense har en separat pool.",items:["Normal Incense · normalt 60 min","Daily Adventure Incense · normalt 15 min","Event-bonusser kan ændre varigheden"]}
-};
-function renderWild(type){
-  document.querySelectorAll("#wildTabs .chip").forEach(x=>x.classList.toggle("active",x.dataset.wild===type));
-  const d=WILD_DATA[type];
-  $("wildContent").innerHTML=`<div class="note" style="margin:0 0 10px">${esc(d.text)}</div><div class="list">${d.items.map(x=>`<div class="linkrow"><span class="emoji">${type==="lure"?"🧲":type==="incense"?"🕯️":"🌿"}</span><div class="grow"><div class="name">${esc(x)}</div><div class="small">Live-pool kan tilsluttes her uden at opfinde Pokémon-data.</div></div><span class="arrow">›</span></div>`).join("")}</div>`;
-}
-document.querySelectorAll("#wildTabs .chip").forEach(x=>x.onclick=()=>renderWild(x.dataset.wild));
-
-function renderMax(){
-  $("maxList").innerHTML=`<div class="card"><div class="name">Live Dynamax-data</div><div class="small" style="margin-top:5px">Denne sektion er klar til Max Battle-feed med Pokémon, shiny-status og hundo CP. Der vises ikke opdigtede boss-data.</div></div>`;
-}
-function renderBattles(){
-  $("battleList").innerHTML=`<div class="list">
-    <div class="linkrow"><span class="emoji">🥉</span><div class="grow"><div class="name">Great League</div><div class="small">GO Battle League-format · live cup-data tilsluttes separat.</div></div><span class="arrow">›</span></div>
-    <div class="linkrow"><span class="emoji">🥈</span><div class="grow"><div class="name">Ultra League</div><div class="small">GO Battle League-format · live cup-data tilsluttes separat.</div></div><span class="arrow">›</span></div>
-    <div class="linkrow"><span class="emoji">🥇</span><div class="grow"><div class="name">Master League</div><div class="small">GO Battle League-format · live cup-data tilsluttes separat.</div></div><span class="arrow">›</span></div>
-    <div class="card"><div class="name">5 sejre i en serie</div><div class="small" style="margin-top:5px">Rewards ændres efter den aktuelle GBL-sæson. Denne version viser ikke et opdigtet reward-sæt.</div></div>
-  </div>`;
-}
-
-show("home");
-</script>
-</body>
-</html>
+const BASE="https://raw.githubusercontent.com/zhenga8533/leak-duck/data/",URLS={events:BASE+"events.json",raids:BASE+"raid_bosses.json",eggs:BASE+"egg_pool.json",research:BASE+"research_tasks.json"},POKE="https://raw.githubusercontent.com/WatWowMap/pogo-data-api/main/data/v1/pokemon/",MAX="https://pokemon-go-api.github.io/pokemon-go-api/api/maxbattles.json";
+let cache={},pokeCache={};const $=id=>document.getElementById(id),esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])),now=()=>new Date(),tm=d=>d?d.toLocaleTimeString("da-DK",{hour:"2-digit",minute:"2-digit"}):"",dt=d=>d?d.toLocaleDateString("da-DK",{weekday:"short",day:"numeric",month:"short"}):"";
+async function get(u){let r=await fetch(u+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)throw Error(r.status);return r.json()}function up(){$("upd").textContent="Opdateret "+tm(now())}
+function show(p){document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===p));let n={home:["Pokémon GO","GO Uge"],overview:["Oversigt","Events næste 7 dage"],raids:["Raids","Normale + Shadow"],wild:["In The Wild","Wild, Lures og Incense"],eggs:["Eggs","Pool + hundo CP"],research:["Field Research Tasks","Event + normale"],dynamax:["Dynamax","Max Battles"],battles:["Battles","GBL Season 28"]}[p];$("pt").textContent=n[0];$("ps").textContent=n[1];if(p==="overview")events();if(p==="raids")raids();if(p==="wild")wild("wild");if(p==="eggs")eggs();if(p==="research")research();if(p==="dynamax")max();if(p==="battles")battles();scrollTo(0,0)}document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>show(b.dataset.p));$("menuBtn").onclick=()=>show("home");$("refresh").onclick=()=>{cache={};show("home")};
+function parse(e){return {...e,title:e.title||"Event",start:e.start_time?new Date(e.start_time):null,end:e.end_time?new Date(e.end_time):null}}
+async function events(){let box=$("events");box.innerHTML="<div class=load>Henter…</div>";try{let raw=cache.events||(cache.events=await get(URLS.events)),n=now(),end=new Date(n);end.setDate(end.getDate()+7);let a=Object.values(raw||{}).flat().map(parse).filter(e=>(!e.start||e.start<=end)&&(!e.end||e.end>=n)).sort((a,b)=>(a.start||0)-(b.start||0)),h="",last="";a.forEach(e=>{let d=dt(e.start||e.end);if(d!==last){h+=`<div class=eventdate>${esc(d)}</div>`;last=d}let live=(!e.start||e.start<=n)&&(!e.end||e.end>=n);h+=`<div class=card><div class=row><span class="dot ${live?"live":""}"></span><div class=grow><div class=name>${esc(e.title)} ${live?"🟢":""}</div><div class=small>${e.start?tm(e.start):""}${e.end?" – "+tm(e.end):""} · ${esc(e.category||"")}</div>${(e.details?.bonuses||[]).slice(0,2).map(x=>`<div class=small>${esc(x)}</div>`).join("")}</div></div></div>`});box.innerHTML=h||"<div class=empty>Ingen events fundet.</div>";up()}catch(e){box.innerHTML="<div class=empty>Kunne ikke hente event-data. Tryk ↻ igen.</div>"}}
+function odds(t,n){n=(n||"").toLowerCase();if(/5-star/.test(t)||/legendary|mythical|ultra/.test(n)||/shadow (thundurus|giratina|mewtwo|lugia|ho-oh|zapdos|moltres|articuno)/.test(n))return"ca. 1/20";return"ca. 1/64"}
+async function raids(){let box=$("raids");box.innerHTML="<div class=load>Henter…</div>";try{let raw=cache.raids||(cache.raids=await get(URLS.raids)),h="";Object.entries(raw||{}).forEach(([tier,list])=>{if(!Array.isArray(list))return;h+=`<div class=section>${esc(tier)}</div>`;list.forEach(r=>{let c=r.cp_range||{},b=r.boosted_cp_range||{},sh=r.shiny_available===true;h+=`<div class=card><div class=row><div class=img>${r.asset_url?`<img src="${esc(r.asset_url)}">`:"⚔️"}</div><div class=grow><div class=name>${esc(r.name)}</div><div class=small>${sh?"✨ Shiny: "+odds(tier,r.name):"Shiny ikke tilgængelig/angivet"}</div></div></div><div class=stats><div class=stat><b>${c.max??"—"}</b><span>Hundo normal</span></div><div class=stat><b>${b.max??"—"}</b><span>Hundo weather</span></div><div class=stat><b>${sh?odds(tier,r.name):"—"}</b><span>Shiny</span></div></div></div>`})});box.innerHTML=h||"<div class=empty>Ingen raid-data.</div>";up()}catch(e){box.innerHTML="<div class=empty>Kunne ikke hente raid-data.</div>"}}
+const lure={"Normal Lure Module":["Aktuelle wild/event-spawns"],"Glacial Lure Module":["Jynx","Eevee","Totodile","Swinub","Mantine","Snorunt","Spheal","Piplup","Snover","Oshawott","Seel","Shellder","Magikarp","Sneasel","Wailmer","Feebas","Clamperl","Finneon","Cryogonal"],"Mossy Lure Module":["Oddish","Bellsprout","Venonat","Tangela","Eevee","Sudowoodo","Hoppip","Yanma","Roselia","Cherubi","Applin","Butterfree","Beedrill","Exeggcute","Scyther","Shuckle","Gulpin","Combee"],"Magnetic Lure Module":["Pikachu","Alolan Geodude","Magnemite","Voltorb","Electrode","Jolteon","Nosepass","Aron","Beldum","Joltik","Alolan Diglett","Onix","Electabuzz","Mareep","Skarmory","Lairon","Electrike","Shieldon"],"Rainy Lure Module":["Psyduck","Spinarak","Chinchou","Surskit","Electrike","Joltik","Tympole","Tynamo","Stunfisk","Froakie"],"Golden Lure Module":["Roaming Form Gimmighoul"]};
+function activeSpawns(){let n=now(),out=new Map(),a=cache.events?Object.values(cache.events).flat().map(parse):[];a.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n)).forEach(e=>(e.details?.spawns||[]).forEach(p=>out.set(p.name,{...p,source:e.title})));return[...out.values()]}
+function wild(type){document.querySelectorAll("[data-w]").forEach(x=>x.classList.toggle("active",x.dataset.w===type));let b=$("wildBox");if(type==="wild"){let a=activeSpawns();b.innerHTML=`<div class=note>Wild-listen bruger aktuelle event-spawns fra den strukturerede event-feed. Den fulde sæson/biome-pool er ikke offentlig som én stabil global API.</div><div class=section>Aktuelle event-spawns</div>${a.length?a.map(p=>`<div class=card><div class=name>${esc(p.name)}</div><div class=small>${p.shiny_available===true?"✨ Shiny mulig":"Shiny ikke angivet"} · ${esc(p.source)}</div></div>`).join(""):"<div class=empty>Ingen event-spawns fundet.</div>"}`;return}if(type==="lure"){b.innerHTML=`<div class=note>Special Lure-pools nedenfor er de kendte boosted pools. Normal/Golden følger i høj grad den aktuelle sæson/event.</div>`+Object.entries(lure).map(([k,v])=>`<div class=card><div class=name>${k}</div><div class=small style="margin-top:5px">⏱ 30 minutter</div><div class=small style="margin-top:5px">${v.map(esc).join(" · ")}</div></div>`).join("");return}b.innerHTML=`<div class=card><div class=name>Normal Incense</div><div class=small>⏱ Normalt 60 minutter · poolen følger sæson/event.</div></div><div class=card><div class=name>Daily Adventure Incense</div><div class=small>⏱ Normalt 15 minutter · separat pool, bl.a. Galarian Birds når de er aktive.</div></div><div class=note>Incense/Lure kan få forlænget varighed under events eller Daily Discoveries.</div>`}document.querySelectorAll("[data-w]").forEach(x=>x.onclick=()=>wild(x.dataset.w));
+function id(u){let m=String(u||"").match(/(?:pm|pokemon_icon_|pokemon_icons_crop\/pm)(\d{1,4})/i);return m?+m[1]:null}async function poke(i){if(!i)return null;if(pokeCache[i])return pokeCache[i];try{return pokeCache[i]=await get(POKE+i+".json")}catch{return null}}function cpm(l){return l===15?.51739395:.59740001}function hundo(p,l){return p&&p.attack!=null?Math.floor((p.attack+15)*Math.sqrt(p.defense+15)*Math.sqrt(p.stamina+15)*cpm(l)**2/10):null}
+async function eggs(){let b=$("eggs");b.innerHTML="<div class=load>Henter æg og beregner hundo CP…</div>";try{let raw=cache.eggs||(cache.eggs=await get(URLS.eggs)),h="";for(let [d,ls]of Object.entries(raw||{})){if(!Array.isArray(ls))continue;h+=`<div class=section>${esc(d)} · Hundo 1/216 · Shiny ca. 1/64</div>`;for(let p of ls){let q=await poke(id(p.asset_url)),cp=hundo(q,20);h+=`<div class=card><div class=row><div class=img><img src="${esc(p.asset_url||"")}"></div><div class=grow><div class=name>${esc(p.name)}</div><div class=small>✨ ${p.shiny_available===true?"Shiny mulig":"Shiny ikke tilgængelig"}</div></div></div><div class=stats><div class=stat><b>${cp??"—"}</b><span>Hundo CP</span></div><div class=stat><b>1/216</b><span>Hundo chance</span></div><div class=stat><b>${p.shiny_available===true?"~1/64":"—"}</b><span>Shiny</span></div></div></div>`}}b.innerHTML=h||"<div class=empty>Ingen egg-data.</div>";up()}catch(e){b.innerHTML="<div class=empty>Kunne ikke hente egg-data.</div>"}}
+function research(){let b=$("research");b.innerHTML="<div class=load>Henter research…</div>";get(URLS.research).then(raw=>{cache.research=raw;let ev="",no="";Object.entries(raw||{}).forEach(([g,ls])=>{if(!Array.isArray(ls))return;let is=/ - |event|mega squads|community|raid|research day|hatch day|spotlight/i.test(g),x=ls.map(q=>{let r=q.rewards||[];return`<div class=card><div class=name>${esc(q.task||"Task")}</div><div class=small style="margin-top:5px">🎁 ${esc(r.map(x=>(x.quantity&&x.quantity>1?x.quantity+"× ":"")+(x.name||"Reward")).join(" · "))}</div><div class=small>✨ Encounter shiny-status og CP vises, når kilden leverer det.</div></div>`}).join("");if(is)ev+=`<div class=section>${esc(g)}</div>${x}`;else no+=`<div class=section>${esc(g)}</div>${x}`});b.innerHTML=`<div class=section>Event Field Research</div>${ev||"<div class=empty>Ingen event tasks.</div>"}<div class=section>Normale Field Research</div>${no||"<div class=empty>Ingen normale tasks.</div>"}`;up()}).catch(()=>b.innerHTML="<div class=empty>Kunne ikke hente research-data.</div>")}
+async function max(){let b=$("max");b.innerHTML="<div class=load>Henter Max Battle-feed…</div>";try{let raw=cache.max||(cache.max=await get(MAX)),a=[];if(raw.currentList)Object.values(raw.currentList).forEach(x=>Array.isArray(x)&&a.push(...x));else if(Array.isArray(raw))a=raw;if(!a.length)throw 0;b.innerHTML=`<div class=note>Live Max Battle-feed. Hundo CP er øvre CP i feedets range. Shiny odds for Max Battles er ikke sikkert bekræftet for alle bosses.</div>`+a.map(x=>{let cp=x.cpRange||[];return`<div class=card><div class=row><div class=img>${x.assets?.image?`<img src="${esc(x.assets.image)}">`:"💥"}</div><div class=grow><div class=name>${esc(x.names?.English||x.name||"Dynamax Pokémon")}</div><div class=small>${x.shiny===true?"✨ Shiny mulig":"Shiny ikke bekræftet"}</div></div></div><div class=stats><div class=stat><b>${cp[1]??"—"}</b><span>Hundo CP</span></div><div class=stat><b>${x.shiny===true?"Ukendt":"—"}</b><span>Shiny odds</span></div><div class=stat><b>${x.level??"—"}</b><span>Tier</span></div></div></div>`}).join("");up()}catch(e){b.innerHTML='<div class=card><div class=name>Aktuel rotation: Dynamax Ralts</div><div class=small>7.–13. september 2026. Live Max-feed kunne ikke hentes, så appen opfinder ikke CP eller shiny-tal.</div></div>'}}
+const gbl=[["8.–15. sep","Great League: Mega Edition","Ultra League: Mega Edition","Master League: Mega Edition","4× Stardust fra win rewards"],["15.–22. sep","Great League","Ultra League: Mega Edition","Willpower Cup: Great League Edition",""],["22.–29. sep","Ultra League","Master League: Mega Edition","Retro Cup: Great League Edition",""],["29. sep–6. okt","Master League","Mega Color Cup","—",""],["6.–13. okt","Great League: Mega Edition","Ultra League: Mega Edition","Master League: Mega Edition",""],["13.–20. okt","Great League","Ultra League","Little Cup",""],["20.–27. okt","Ultra League","Master League","Fantasy Cup",""],["27. okt–3. nov","Master League","Mega Halloween Cup","—",""]];function battles(){let h='<div class=note>Season 28 / Twilight Trails: 8. september–2. december 2026.</div>';gbl.forEach(x=>h+=`<div class=card><div class=name>${x[0]}</div><div class=small>🏆 ${esc(x[1])}<br>⚔️ ${esc(x[2])}<br>🥇 ${esc(x[3])}${x[4]?"<br>✨ "+esc(x[4]):""}</div></div>`);h+='<div class=section>5 sejre i én serie</div><div class=card><div class=name>Alle 5 reward-slots er åbnet</div><div class=small>Reward-typerne afhænger af Standard/Premium og din rank. Season 28 reward-systemet indeholder bl.a. Stardust, items, Rare Candy og Pokémon encounters.</div></div><div class=note>GO Battle Thursday kan give op til 4× Stardust fra win rewards og op til 10 sets den dag.</div>';$('battleBox').innerHTML=h;up()}
+show("home");if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script></body></html>
