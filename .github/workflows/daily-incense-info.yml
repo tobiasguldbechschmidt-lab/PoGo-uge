@@ -1,0 +1,89 @@
+name: Daily Adventure Incense Info
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * *'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read official Pokémon GO GO Pass information
+        run: |
+          python - <<'PY'
+          import json,re,urllib.request,datetime
+          from pathlib import Path
+
+          url='https://pokemongo.com/go-pass'
+          req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0'})
+          html=urllib.request.urlopen(req,timeout=30).read().decode('utf-8','ignore')
+          text=re.sub(r'<[^>]+>',' ',html)
+          text=re.sub(r'\s+',' ',text)
+
+          seasons=re.findall(r'GO Pass:\s*([A-Za-z]+)',text,re.I)
+          season=seasons[-1] if seasons else 'Aktuel GO Pass'
+          m=re.search(r'Rank\s*(\d+).{0,500}?2[×x] Daily Adventure Incense duration',text,re.I)
+          if not m:
+              m=re.search(r'2[×x] Daily Adventure Incense duration.{0,500}?Rank\s*(\d+)',text,re.I)
+          rank=int(m.group(1)) if m else 50
+
+          data={
+            'season':f'GO Pass: {season}',
+            'rank':rank,
+            'base_minutes':15,
+            'upgraded_minutes':30,
+            'multiplier':2,
+            'official_go_pass':'https://pokemongo.com/go-pass',
+            'official_incense':'https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/',
+            'updated_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds')
+          }
+          Path('dai-info.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n')
+          PY
+
+      - name: Update the Daily Adventure Incense view
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          start=s.find('async function showDailyDuration(){')
+          if start < 0:
+              raise SystemExit('showDailyDuration not found')
+          end=s.find('\n',start)
+          depth=0
+          i=start
+          in_str=None
+          esc=False
+          while i < len(s):
+              ch=s[i]
+              if in_str:
+                  if esc: esc=False
+                  elif ch=='\\': esc=True
+                  elif ch==in_str: in_str=None
+              else:
+                  if ch in "'\"`": in_str=ch
+                  elif ch=='{': depth+=1
+                  elif ch=='}':
+                      depth-=1
+                      if depth==0:
+                          i+=1
+                          break
+              i+=1
+          new="""async function showDailyDuration(){open('<h2>Daily Adventure Incense</h2><div class=section>Varighed</div><div id=dai-live><div class=small>Henter aktuelle oplysninger…</div></div>');let box=$('dai-live');try{let r=await fetch('dai-info.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;let d=await r.json();box.innerHTML='<div class=small><b>Nuværende varighed:</b> '+d.base_minutes+' minutter</div><div class=small><b>Næste opgradering:</b> Rank '+d.rank+'</div><div class=small><b>Ny varighed:</b> '+d.upgraded_minutes+' minutter</div><div class=small><b>Hvor meget længere:</b> +'+(d.upgraded_minutes-d.base_minutes)+' minutter ('+d.multiplier+'×)</div><div class=small><b>Aktuel sæson:</b> '+E(d.season)+'</div><div class=small><b>Sådan virker det:</b> Pokémon tiltrækkes kun, mens du bevæger dig i den virkelige verden</div><div class=small><b>Daglig tildeling:</b> kl. 00:00 lokal tid</div><div class=small><b>Senest brug for næste dags Incense:</b> kl. 23:44 lokal tid</div><div class=small><b>Kan ikke bruges:</b> kl. 23:45–00:00 lokal tid</div><div class=small><b>Sidst opdateret:</b> '+new Date(d.updated_utc).toLocaleString('da-DK')+'</div><div class=section>Officiel Pokémon GO-information</div><p><a class=btn href="'+d.official_go_pass+'" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">GO Pass ↗</a></p><p><a class=btn href="'+d.official_incense+'" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Daily Adventure Incense ↗</a></p>'}catch(e){box.innerHTML='<div class=small>Kunne ikke hente de seneste oplysninger. Se den officielle Pokémon GO-information her:</div><p><a class=btn href="https://pokemongo.com/go-pass" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">GO Pass ↗</a></p><p><a class=btn href="https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Daily Adventure Incense ↗</a></p>'}}"""
+          s=s[:start]+new+s[i:]
+          p.write_text(s)
+          PY
+
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html dai-info.json
+          git diff --cached --quiet || git commit -m 'Expand Daily Adventure Incense duration information'
+          git push
