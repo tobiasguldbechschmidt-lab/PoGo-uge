@@ -11,31 +11,40 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Add duration UI
-        shell: bash
+      - name: Add duration UI safely
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('index.html')
-          s = p.read_text()
-          if 'data-incense-duration' in s:
-              raise SystemExit(0)
-          card = '''function incenseDurationCard(){return '<div class=section>Varighed</div><button class="card click" data-incense-duration="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Se varighed og aktive bonusser</div></div>›</div></button>'}\n'''
-          s = s.replace('function dailyIncenseCards(){', card + 'function dailyIncenseCards(){', 1)
-          fn = '''function showIncenseDuration(){let now=N(),a=C.ev||[],active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));let bonus=active.find(e=>e.article_url&&/incense/i.test(JSON.stringify(e.details||{}))&&/duration|varighed/i.test(JSON.stringify(e.details||{})));let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>En almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';if(bonus){h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event kan forlænge Incense-varigheden.</div><p><button class="btn" type="button" data-event-url="'+E(bonus.article_url)+'" style="width:100%;cursor:pointer">Åbn eventet ↗</button></p></div>'}else h+='<div class=note>Ingen aktiv Incense-varighedsbonus registreret lige nu.</div>';h+='<div class=section>Sådan virker det</div><div class=card><div class=small>• Normal Incense: 60 minutter.<br>• Særlige events kan forlænge varigheden.<br>• Flere Incense kan stables op til 24 timer.<br>• Daily Adventure Incense har sin egen varighed.</div></div><div class=section>Officiel info</div><div class=card><button class="btn" type="button" data-external-url="https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en" style="width:100%;cursor:pointer">Åbn officiel Incense-info ↗</button></div>';open(h)}
-'''
-          s = s.replace('function showIncenseSpawns(){', fn + 'function showIncenseSpawns(){', 1)
-          s = s.replace("dailyIncenseCards()+bonusCards(inc,'Incense')", "incenseDurationCard()+dailyIncenseCards()+bonusCards(inc,'Incense')", 1)
-          hook = "document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-spawns]');"
-          s = s.replace(hook, "document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-duration]');if(b){e.stopPropagation();showIncenseDuration()}});" + hook, 1)
-          ext = "document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]');"
-          s = s.replace(ext, "document.addEventListener('click',e=>{let b=e.target.closest('[data-external-url]');if(b){e.stopPropagation();location.href=b.dataset.externalUrl}});" + ext, 1)
+          import re, subprocess, tempfile
+          p=Path('index.html')
+          s=p.read_text()
+          if 'data-incense-duration' not in s:
+              card="""function incenseDurationCard(){return '<div class=section>Varighed</div><button class=\"card click\" data-incense-duration=\"1\" style=\"width:100%;text-align:left\"><div class=row><span style=\"font-size:25px\">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Se varighed og aktive bonusser</div></div>›</div></button>'}\n"""
+              s=s.replace('function dailyIncenseCards(){',card+'function dailyIncenseCards(){',1)
+          if 'function showIncenseDuration()' not in s:
+              fn="""function showIncenseDuration(){let now=N(),a=C.ev||[],active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));let bonus=active.find(e=>e.article_url&&/incense/i.test(JSON.stringify(e.details||{}))&&/duration|varighed/i.test(JSON.stringify(e.details||{})));let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>En almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';if(bonus){h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event kan forlænge Incense-varigheden.</div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>'}else h+='<div class=note>Ingen aktiv Incense-varighedsbonus registreret lige nu.</div>';h+='<div class=section>Sådan virker det</div><div class=card><div class=small>• Normal Incense: 60 minutter.<br>• Særlige events kan forlænge varigheden.<br>• Flere Incense kan stables op til 24 timer.<br>• Daily Adventure Incense har sin egen varighed.</div></div><div class=section>Officiel info</div><div class=card><button class=\"btn\" type=\"button\" data-external-url=\"https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en\" style=\"width:100%;cursor:pointer\">Åbn officiel Incense-info ↗</button></div>';open(h)}\n"""
+              s=s.replace('async function showIncenseSpawns(){',fn+'async function showIncenseSpawns(){',1)
+          if "data-incense-duration]" not in s:
+              hook="document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-spawns]');"
+              s=s.replace(hook,"document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-duration]');if(b){e.stopPropagation();showIncenseDuration()}});"+hook,1)
+          if 'data-external-url' not in s:
+              hook="document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]');"
+              s=s.replace(hook,"document.addEventListener('click',e=>{let b=e.target.closest('[data-external-url]');if(b){e.stopPropagation();location.href=b.dataset.externalUrl}});"+hook,1)
+          # Put Varighed in the regular Incense tab, without changing the existing Daily Adventure button.
+          s=s.replace("dailyIncenseCards()+bonusCards(inc,'Incense')","incenseDurationCard()+dailyIncenseCards()+bonusCards(inc,'Incense')",1)
           p.write_text(s)
+          # Validate every script block independently so one bad replacement cannot break the menu.
+          scripts=re.findall(r'<script>([\\s\\S]*?)</script>',s)
+          if not scripts: raise SystemExit('No script block found')
+          for i,js in enumerate(scripts):
+              f=Path(tempfile.gettempdir())/f'pogo-{i}.js'
+              f.write_text(js)
+              subprocess.run(['node','--check',str(f)],check=True)
           PY
       - name: Commit UI
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Add regular Incense duration info'
+          git diff --cached --quiet || git commit -m 'Add regular Incense duration button'
           git push
