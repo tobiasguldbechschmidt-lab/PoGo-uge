@@ -1,0 +1,43 @@
+name: Daily Adventure Incense Duration
+on:
+  push:
+    paths:
+      - '.github/workflows/daily-incense-duration.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          if 'data-dai-duration' not in s:
+              start=s.find('function dailyIncenseCards(){')
+              end=s.find('function showDailyIncense',start)
+              block=s[start:end]
+              old="</button>'}"
+              new="</button><button class=\"card click\" data-dai-duration=\"1\" style=\"width:100%;text-align:left\"><div class=row><span style=\"font-size:25px\">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Se den aktuelle varighed og hvilken GO Pass-rank der giver længere Daily Adventure Incense</div></div>›</div></button>'}"
+              if old in block:
+                  block=block.replace(old,new,1)
+                  s=s[:start]+block+s[end:]
+          if 'function showDailyDuration()' not in s:
+              anchor='function showDailyIncense()'
+              i=s.find(anchor)
+              fn="""async function showDailyDuration(){open('<h2>Daily Adventure Incense</h2><div class=small>Aktuel GO Pass · opdateres automatisk</div><div class=section>Varighed</div><div id=dai-live class=note>Henter aktuelle oplysninger…</div>');let box=$('dai-live');try{let r=await fetch('https://pokemongo.com/go-pass?dai='+Date.now(),{cache:'no-store'});let t=await r.text();let m=t.match(/Rank\\s*(\\d+)[\\s\\S]{0,800}?2[×x] Daily Adventure Incense duration/i)||t.match(/2[×x] Daily Adventure Incense duration[\\s\\S]{0,800}?Rank\\s*(\\d+)/i);let rank=m?+(m[1]||m[2]):50;box.innerHTML='<b>15 minutter</b> som standard.<br>Ved <b>Rank '+rank+'</b> i den aktuelle GO Pass bliver varigheden <b>30 minutter</b> (2×).'}catch(e){box.innerHTML='<b>15 minutter</b> som standard.<br>Den aktuelle GO Pass-bonus er <b>2× ved Rank 50</b>, hvilket giver <b>30 minutter</b>.'}}\n"""
+              if i>=0:s=s[:i]+fn+s[i:]
+          if "closest('[data-dai-duration]')" not in s:
+              marker="document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]');if(b){e.stopPropagation();location.href=b.dataset.eventUrl}});"
+              handler="document.addEventListener('click',e=>{let b=e.target.closest('[data-dai-duration]');if(b){e.stopPropagation();showDailyDuration()}});"
+              if marker in s:s=s.replace(marker,marker+handler,1)
+          p.write_text(s)
+          PY
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Add Daily Adventure Incense duration info'
+          git push
