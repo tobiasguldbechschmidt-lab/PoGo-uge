@@ -1,0 +1,71 @@
+name: Fix automatic Incense event spawns patch
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-incense-event-spawns.yml'
+  workflow_dispatch:
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Incense section
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          start=s.find('function dailyIncenseCards(){')
+          end=s.find('function showDailyDuration',start)
+          if start<0 or end<0:
+              end=s.find('function showDailyIncense',start)
+          if start<0 or end<0:
+              raise SystemExit('Incense function boundaries not found')
+          block=s[start:end]
+          if 'data-incense-spawns' not in block:
+              pos=block.rfind("</button>'}")
+              if pos<0:
+                  raise SystemExit('Could not find end of dailyIncenseCards')
+              extra="</button><div class=section>Incense</div><button class=\"card click\" data-incense-spawns=\"1\" style=\"width:100%;text-align:left\"><div class=row><span style=\"font-size:25px\">🌫️</span><div class=grow><div class=name>Spawns</div><div class=small>Pokémon fra det aktuelle event</div></div>›</div></button>'}"
+              block=block[:pos]+extra+block[pos+len("</button>'}"):]
+              s=s[:start]+block+s[end:]
+
+          if 'async function showIncenseSpawns()' not in s:
+              marker='function showDailyDuration'
+              if marker not in s: marker='function showDailyIncense'
+              i=s.find(marker)
+              if i<0: raise SystemExit('Daily Incense marker not found')
+              fn=r'''async function showIncenseSpawns(){
+            $('x').onclick=()=>$('modal').classList.remove('open');
+            try{
+              let a=await ev(),n=N();
+              let active=a.filter(e=>e.start&&e.start<=n&&(!e.end||e.end>=n));
+              active.sort((x,y)=>(y.start||0)-(x.start||0));
+              let e=active.find(e=>{let d=e.details||{};return Object.keys(d).some(k=>/incense/i.test(k)&&Array.isArray(d[k])&&d[k].some(v=>v&&v.name))});
+              if(!e)e=active.find(e=>Array.isArray(e.details?.spawns)&&e.details.spawns.length);
+              if(!e){open('<h2>Incense</h2><div class=note>Der er ingen aktive event-spawns til Incense lige nu.</div>');return}
+              let d=e.details||{},keys=Object.keys(d).filter(k=>/incense/i.test(k)&&Array.isArray(d[k]));
+              if(!keys.length&&Array.isArray(d.spawns))keys=['spawns'];
+              let list=[];keys.forEach(k=>d[k].forEach(v=>{if(v&&v.name&&!list.some(x=>x.name===v.name))list.push(v)}));
+              if(!list.length){open(`<h2>Incense</h2><div class=small>${E(e.title)}</div><div class=note>Ingen Incense-spawns er registreret for dette event endnu.</div>`);return}
+              open(`<h2>Incense Spawns</h2><div class=small>${E(e.title)}</div><div class=section>Pokémon</div>${list.map(p=>`<div class=card><div class=row><div class=img>${p.asset_url?`<img src="${E(p.asset_url)}" alt="${E(p.name)}" loading="lazy">`:''}</div><div class=grow><div class=name>${E(p.name)}</div><div class=small>${p.shiny_available?'Shiny tilgængelig':'Shiny ikke oplyst'}</div></div></div></div>`).join('')}<div class=section>Event</div><div class=small>${E(e.title)}</div>`);
+            }catch(err){open('<h2>Incense</h2><div class=note>Kunne ikke hente det aktuelle Incense-event. Tryk ↻ og prøv igen.</div>')}
+          }
+          '''
+              s=s[:i]+fn+s[i:]
+
+          if "closest('[data-incense-spawns]')" not in s:
+              handler="document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-spawns]');if(b){e.stopPropagation();showIncenseSpawns()}});"
+              anchor="document.addEventListener('click',e=>{let b=e.target.closest('[data-dai-duration]');if(b){e.stopPropagation();showDailyDuration()}});"
+              if anchor in s:s=s.replace(anchor,anchor+handler,1)
+              else:s=s.replace('</script>',handler+'</script>',1)
+          p.write_text(s)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Add current event Incense spawns'
+          git push
