@@ -16,21 +16,17 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text()
-          old="v[2]===1?'Ca. 1 ud af 500':v[2]===2?'Ca. 1 ud af 50':v[2]===3?'Ca. 1 ud af 20':'Ca. 1 ud af 10'"
-          new="v[2]===1?'Ca. 1 ud af 500':v[2]===2?'Ca. 1 ud af 50':v[2]===3?'Ca. 1 ud af 20':'Ca. 1 ud af 10 · Pokémon der kan fanges'"
-          if old not in s:
-              old2="v[2]===1?'Ekstremt sjælden':v[2]===2?'Meget sjælden':v[2]===3?'Sjælden':'Sjælden evolution'"
-              new2=new
-              if old2 not in s:
-                  raise SystemExit('Daily Incense rarity text not found')
-              s=s.replace(old2,new2,1)
-          else:
-              s=s.replace(old,new,1)
+          replacements={
+            "['Dragonite',149,4]":"['Dratini',147,4]","['Metagross',376,4]":"['Beldum',374,4]","['Gardevoir',282,4]":"['Ralts',280,4]","['Gengar',94,4]":"['Gastly',92,4]","['Machamp',68,4]":"['Machop',66,4]","['Gyarados',130,4]":"['Magikarp',129,4]","['Mamoswine',473,4]":"['Swinub',220,4]","['Rhyperior',464,4]":"['Rhyhorn',111,4]","['Aggron',306,4]":"['Aron',304,4]","['Flygon',330,4]":"['Trapinch',328,4]","['Houndoom',229,4]":"['Houndour',228,4]","['Talonflame',663,4]":"['Fletchling',661,4]","['Abomasnow',460,4]":"['Snover',459,4]","['Bewear',760,4]":"['Stufful',759,4]","['Altaria',334,4]":"['Swablu',333,4]","['Wigglytuff',40,4]":"['Jigglypuff',39,4]","['Jumpluff',189,4]":"['Hoppip',187,4]","['Shiftry',275,4]":"['Seedot',273,4]","['Toxicroak',454,4]":"['Croagunk',453,4]","['Slaking',289,4]":"['Slakoth',287,4]","['Forretress',205,4]":"['Pineco',204,4]","['Alolan Sandslash',28,4]":"['Alolan Sandshrew',27,4]","['Rapidash',78,4]":"['Ponyta',77,4]","['Pidgeot',18,4]":"['Pidgey',16,4]","['Blastoise',9,4]":"['Squirtle',7,4]","['Charizard',6,4]":"['Charmander',4,4]","['Venusaur',3,4]":"['Bulbasaur',1,4]","['Ampharos',181,4]":"['Mareep',179,4]","['Luxray',405,4]":"['Shinx',403,4]","['Alakazam',65,4]":"['Abra',63,4]"
+          }
+          for a,b in replacements.items():
+              s=s.replace(a,b)
+          s=s.replace("Ca. 1 ud af 10 · Pokémon der kan fanges","Ca. 1 ud af 10")
           p.write_text(s)
           PY
       - run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Label Daily Incense catchable evolution spawns'
+          git diff --cached --quiet || git commit -m 'Use base Pokemon for Daily Incense evolutions'
           git push
