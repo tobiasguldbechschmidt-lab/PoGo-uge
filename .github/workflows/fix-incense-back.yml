@@ -11,7 +11,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Fix modal back behavior
+      - name: Fix modal back behavior and event link
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -20,12 +20,17 @@ jobs:
           old="async function showIncenseSpawns(){\n  try{"
           new="async function showIncenseSpawns(){\n  $('x').onclick=()=>$('modal').classList.remove('open');\n  try{"
           if old in s:
-              p.write_text(s.replace(old,new,1))
+              s=s.replace(old,new,1)
+          old2="<div class=section>Event</div><div class=card>${E(e.title)}</div>"
+          new2="<div class=section>Event</div><div class=card click data-event-url=\"${E(e.article_url||e.url||'')}\"><span>${E(e.title)}</span><div class=small style=\"margin-top:7px\">Åbn eventet ↗</div></div>"
+          if old2 in s:
+              s=s.replace(old2,new2,1)
+          p.write_text(s)
           PY
       - name: Commit fix
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Fix Incense modal back button'
+          git diff --cached --quiet || git commit -m 'Add event link to Incense Pokémon details'
           git push
