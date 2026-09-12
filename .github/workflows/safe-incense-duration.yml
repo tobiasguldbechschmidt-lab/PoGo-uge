@@ -10,56 +10,56 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Restore working app and add duration feature
+      - name: Remove broken duplicate and add duration feature
         run: |
           set -e
-          git checkout d4c237f1d66318b89b2cc138050a33adc9d8cd09 -- index.html
           python3 - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text()
-          card="""function incenseDurationCard(){return '<div class=section>Varighed</div><button class=\"card click\" data-incense-duration=\"1\" style=\"width:100%;text-align:left\"><div class=row><span style=\"font-size:25px\">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Se normal varighed, eventbonusser og næste forlængelse</div></div>›</div></button>'}
-          """
-          if s.count('function incenseDurationCard()') != 0: raise SystemExit('duration feature already present')
-          if s.count('function dailyIncenseCards(){') != 1: raise SystemExit('dailyIncenseCards anchor missing')
-          s=s.replace('function dailyIncenseCards(){',card+'function dailyIncenseCards(){',1)
-          fn="""function showIncenseDuration(){
-            $('x').onclick=()=>$('modal').classList.remove('open');
-            ev().then(a=>{
-              let now=N(),active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now)),upcoming=a.filter(e=>e.start&&e.start>now).sort((x,y)=>x.start-y.start);
-              let text=e=>(JSON.stringify(e.details||{})+' '+JSON.stringify(e)).toLowerCase(),hasBonus=e=>/incense/.test(text(e))&&/duration|varighed|2x|3x|two hours|three hours|2 hours|3 hours/.test(text(e));
-              let bonus=active.find(hasBonus),next=upcoming.find(hasBonus),h='<h2>Incense · Varighed</h2>';
-              h+='<div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>En almindelig Incense varer normalt 60 minutter.</div></div>';
-              h+='<div class=section>Kan den vare længere?</div><div class=card><div class=small>Særlige events kan forlænge Incense. Det kan f.eks. være 2 eller 3 timer afhængigt af eventet. Daily Adventure Incense har sin egen separate varighed.</div></div>';
-              h+='<div class=section>Aktiv forlængelse</div>';
-              if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event har en Incense-varighedsbonus.</div>'+(bonus.article_url?'<p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p>':'')+'</div>';else h+='<div class=note>Ingen aktiv Incense-varighedsbonus registreret lige nu.</div>';
-              h+='<div class=section>Næste kendte forlængelse</div>';
-              if(next)h+='<div class=card><b>'+E(next.title)+'</b><div class=small>'+next.start.toLocaleString('da-DK')+'</div>'+(next.article_url?'<p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(next.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p>':'')+'</div>';else h+='<div class=note>Ingen kommende Incense-varighedsbonus er registreret i data endnu.</div>';
-              h+='<div class=section>Sådan virker Incense</div><div class=card><div class=small>• Normal Incense: 60 minutter.<br>• Events kan give længere varighed.<br>• Flere Incense kan stables op til 24 timer.<br>• Daily Adventure Incense er separat.<br>• Varigheden gælder fra aktivering.</div></div>';
-              h+='<div class=section>Officiel info</div><div class=card><a href=\"https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en\" target=_blank>Åbn officiel Incense-info ↗</a></div>';open(h);
-            }).catch(()=>open('<h2>Incense · Varighed</h2><div class=note>Kunne ikke hente eventdata lige nu.</div>'));
-          }
-          """
-          if s.count('function showIncenseSpawns(){') != 1: raise SystemExit('showIncenseSpawns anchor missing')
-          s=s.replace('function showIncenseSpawns(){',fn+'function showIncenseSpawns(){',1)
-          hook="document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-spawns]');"
-          if s.count(hook) != 1: raise SystemExit('incense click anchor missing')
-          s=s.replace(hook,"document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-duration]');if(b){e.stopPropagation();showIncenseDuration()}});"+hook,1)
-          render="dailyIncenseCards()+bonusCards(inc,'Incense')"
-          if s.count(render) != 1: raise SystemExit('wild render anchor missing')
-          s=s.replace(render,"incenseDurationCard()+dailyIncenseCards()+bonusCards(inc,'Incense')",1)
+          # The previous duration attempt duplicated this top-level declaration, which stops all JS.
+          marker="const TYPE_NAMES={1:'Normal',2:'Kamp',3:'Flyvende',4:'Gift',5:'Jord',6:'Klippe',7:'Bug',8:'Spøgelse',9:'Stål',10:'Ild',11:'Vand',12:'Græs',13:'Elektrisk',14:'Psykisk',15:'Is',16:'Drage',17:'Mørke',18:'Fe'};"
+          if s.count(marker)>1:
+              first=s.find(marker); second=s.find(marker,first+len(marker)); s=s[:second]+s[second+len(marker):]
+          if 'function incenseDurationCard()' not in s:
+              card="function incenseDurationCard(){return '<div class=section>Varighed</div><button class=\"card click\" data-incense-duration=\"1\" style=\"width:100%;text-align:left\"><div class=row><span style=\"font-size:25px\">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Se normal varighed, eventbonusser og næste forlængelse</div></div>›</div></button>'}\n"
+              if s.count('function dailyIncenseCards(){')!=1: raise SystemExit('dailyIncenseCards anchor missing')
+              s=s.replace('function dailyIncenseCards(){',card+'function dailyIncenseCards(){',1)
+              fn="""function showIncenseDuration(){
+                $('x').onclick=()=>$('modal').classList.remove('open');
+                ev().then(a=>{
+                  let now=N(),active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now)),upcoming=a.filter(e=>e.start&&e.start>now).sort((x,y)=>x.start-y.start);
+                  let text=e=>(JSON.stringify(e.details||{})+' '+JSON.stringify(e)).toLowerCase(),hasBonus=e=>/incense/.test(text(e))&&/duration|varighed|2x|3x|two hours|three hours|2 hours|3 hours/.test(text(e));
+                  let bonus=active.find(hasBonus),next=upcoming.find(hasBonus),h='<h2>Incense · Varighed</h2>';
+                  h+='<div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>En almindelig Incense varer normalt 60 minutter.</div></div>';
+                  h+='<div class=section>Kan den vare længere?</div><div class=card><div class=small>Særlige events kan forlænge Incense. Det kan f.eks. være 2 eller 3 timer afhængigt af eventet. Daily Adventure Incense har sin egen separate varighed.</div></div>';
+                  h+='<div class=section>Aktiv forlængelse</div>';
+                  if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event har en Incense-varighedsbonus.</div>'+(bonus.article_url?'<p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p>':'')+'</div>';else h+='<div class=note>Ingen aktiv Incense-varighedsbonus registreret lige nu.</div>';
+                  h+='<div class=section>Næste kendte forlængelse</div>';
+                  if(next)h+='<div class=card><b>'+E(next.title)+'</b><div class=small>'+next.start.toLocaleString('da-DK')+'</div>'+(next.article_url?'<p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(next.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p>':'')+'</div>';else h+='<div class=note>Ingen kommende Incense-varighedsbonus er registreret i data endnu.</div>';
+                  h+='<div class=section>Sådan virker Incense</div><div class=card><div class=small>• Normal Incense: 60 minutter.<br>• Events kan give længere varighed.<br>• Flere Incense kan stables op til 24 timer.<br>• Daily Adventure Incense er separat.<br>• Varigheden gælder fra aktivering.</div></div>';
+                  h+='<div class=section>Officiel info</div><div class=card><a href=\"https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en\" target=_blank>Åbn officiel Incense-info ↗</a></div>';open(h);
+                }).catch(()=>open('<h2>Incense · Varighed</h2><div class=note>Kunne ikke hente eventdata lige nu.</div>'));
+              }
+              """
+              if s.count('function showIncenseSpawns(){')!=1: raise SystemExit('showIncenseSpawns anchor missing')
+              s=s.replace('function showIncenseSpawns(){',fn+'function showIncenseSpawns(){',1)
+              hook="document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-spawns]');"
+              if s.count(hook)!=1: raise SystemExit('incense click anchor missing')
+              s=s.replace(hook,"document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-duration]');if(b){e.stopPropagation();showIncenseDuration()}});"+hook,1)
+              render="dailyIncenseCards()+bonusCards(inc,'Incense')"
+              if s.count(render)!=1: raise SystemExit('wild render anchor missing')
+              s=s.replace(render,"incenseDurationCard()+dailyIncenseCards()+bonusCards(inc,'Incense')",1)
           p.write_text(s)
           PY
           python3 - <<'PY'
           import re,subprocess
-          s=open('index.html').read();js=re.search(r'<script>([\\s\\S]*)</script>',s).group(1);open('/tmp/app.js','w').write(js);subprocess.run(['node','--check','/tmp/app.js'],check=True)
+          s=open('index.html').read(); js=re.search(r'<script>([\s\S]*)</script>',s).group(1); open('/tmp/app.js','w').write(js); subprocess.run(['node','--check','/tmp/app.js'],check=True)
           PY
       - name: Commit only if valid
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Add safe regular Incense duration info'
+          git diff --cached --quiet || git commit -m 'Fix menu JS and add regular Incense duration'
           git push
