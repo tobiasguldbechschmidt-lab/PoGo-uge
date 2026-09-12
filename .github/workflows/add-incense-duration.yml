@@ -1,0 +1,47 @@
+name: Add regular Incense duration info
+on:
+  push:
+    paths:
+      - 'index.html'
+      - '.github/workflows/add-incense-duration.yml'
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add duration button and modal
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker="function dailyIncenseCards(){"
+          if 'data-incense-duration' not in s and marker in s:
+              s=s.replace(marker, "function incenseDurationCard(){return '<div class=section>Varighed</div><button class=\"card click\" data-incense-duration=\"1\" style=\"width:100%;text-align:left\"><div class=row><span style=\"font-size:25px\">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Se varighed og aktive bonusser</div></div>›</div></button>'}\n"+marker,1)
+          if 'function showIncenseDuration()' not in s:
+              marker="function showIncenseSpawns(){"
+              fn="""function showIncenseDuration(){
+                let now=N(),a=[];
+                try{a=Array.isArray(C.ev)?C.ev:[];let active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));let bonus=active.find(e=>/incense/i.test(JSON.stringify(e.details||{}))&&/duration|varighed/i.test(JSON.stringify(e.details||{}))&&e.article_url);let html='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>En almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';
+                if(bonus){let txt=JSON.stringify(bonus.details||{});let mult=txt.match(/(2|3|4|6|8|24)\\s*[×x]/i);html+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event kan forlænge Incense-varigheden. Den præcise bonus står i eventets officielle information.</div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>'}else html+='<div class=note>Ingen aktiv Incense-varighedsbonus registreret lige nu.</div>';
+                html+='<div class=section>Sådan virker det</div><div class=card><div class=small>• Normal Incense: 60 minutter.<br>• Under særlige events kan varigheden blive længere.<br>• Flere Incense kan stables op til 24 timer.<br>• Daily Adventure Incense har sin egen varighed og er ikke omfattet af denne knap.</div></div><div class=section>Officiel info</div><div class=card><button class=\"btn\" type=\"button\" data-external-url=\"https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en\" style=\"width:100%;cursor:pointer\">Åbn officiel Incense-info ↗</button></div>';
+                open(html)}catch{open('<h2>Incense · Varighed</h2><div class=note>Kunne ikke hente varighedsinfo.</div>')}}
+                
+"""
+              s=s.replace(marker,fn+marker,1)
+          s=s.replace("dailyIncenseCards()+bonusCards(inc,'Incense')","incenseDurationCard()+dailyIncenseCards()+bonusCards(inc,'Incense')",1)
+          if 'data-incense-duration' not in s.split('document.addEventListener',1)[-1]:
+              s=s.replace("document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-spawns]');", "document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-duration]');if(b){e.stopPropagation();showIncenseDuration()}});document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-spawns]');",1)
+          if 'data-external-url' in s and "closest('[data-external-url]')" not in s:
+              s=s.replace("document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]');", "document.addEventListener('click',e=>{let b=e.target.closest('[data-external-url]');if(b){e.stopPropagation();location.href=b.dataset.externalUrl}});document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]');",1)
+          p.write_text(s)
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Add regular Incense duration info'
+          git push
