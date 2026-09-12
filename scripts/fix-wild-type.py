@@ -10,3 +10,5 @@ new2="let z=typeof v==='number'?TYPE_NAMES[v]:String(v).trim();if(z&&!t.includes
 if old2 not in s: raise SystemExit('type conversion block not found')
 s=s.replace(old2,new2,1)
 p.write_text(s)
+# trigger workflow
+p.write_text(p.read_text()+'\n')
