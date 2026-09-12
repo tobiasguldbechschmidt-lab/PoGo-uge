@@ -1,0 +1,46 @@
+name: Link Wild Event Details
+on:
+  push:
+    paths:
+      - '.github/workflows/wild-event-link.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old="function open(h){$('mb').innerHTML=h;$('modal').classList.add('open')}"
+          new="""async function linkWildEvent(){
+          let sec=[...document.querySelectorAll('#mb .section')].find(x=>x.textContent.trim()==='Hvorfor spawner den?');
+          if(!sec)return;
+          let card=sec.nextElementSibling;
+          if(!card||card.dataset.eventUrl)return;
+          let text=card.textContent.trim().toLowerCase();
+          try{
+            let a=await ev();
+            let m=a.find(e=>e.article_url&&e.title&&text.includes(String(e.title).toLowerCase()))||a.find(e=>e.article_url&&e.title&&String(e.title).toLowerCase().includes(text));
+            if(!m)return;
+            card.classList.add('click');
+            card.dataset.eventUrl=m.article_url;
+            card.insertAdjacentHTML('beforeend','<div class=small style=\"margin-top:7px\">Åbn eventet ↗</div>');
+          }catch{}
+          }
+          function open(h){$('mb').innerHTML=h;$('modal').classList.add('open');linkWildEvent()}"""
+          if old not in s:
+              raise SystemExit('open() pattern not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Make wild event source clickable'
+          git push
