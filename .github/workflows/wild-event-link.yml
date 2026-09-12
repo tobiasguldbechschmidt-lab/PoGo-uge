@@ -16,27 +16,13 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text()
-          old="function open(h){$('mb').innerHTML=h;$('modal').classList.add('open')}"
-          new="""async function linkWildEvent(){
-          let sec=[...document.querySelectorAll('#mb .section')].find(x=>x.textContent.trim()==='Hvorfor spawner den?');
-          if(!sec)return;
-          let card=sec.nextElementSibling;
-          if(!card||card.dataset.eventUrl)return;
-          let text=card.textContent.trim().toLowerCase();
-          try{
-            let a=await ev();
-            let m=a.find(e=>e.article_url&&e.title&&text.includes(String(e.title).toLowerCase()))||a.find(e=>e.article_url&&e.title&&String(e.title).toLowerCase().includes(text));
-            if(!m)return;
-            card.classList.add('click');
-            card.dataset.eventUrl=m.article_url;
-            card.insertAdjacentHTML('beforeend','<div class=small style=\"margin-top:7px\">Åbn eventet ↗</div>');
-          }catch{}
-          }
-          function open(h){$('mb').innerHTML=h;$('modal').classList.add('open');linkWildEvent()}"""
-          if old not in s:
-              raise SystemExit('open() pattern not found')
-          s=s.replace(old,new,1)
-          s=s.replace("<div class=note>Sorteret fra sjældnest til mindst sjælden. Listen viser den særlige Daily Adventure Incense-pool.</div>","")
+          notes = [
+              'Sorteret fra sjældnest til mindst sjælden. Listen viser den særlige Daily Adventure Incense-pool.',
+              'Sorteret fra sjældnest til mindst sjælden. Listen viser den særlige Daily Adventure Incense-Pool.',
+              'Sorteret fra sjældnest til mindst sjælden.'
+          ]
+          for note in notes:
+              s=s.replace(note,'')
           p.write_text(s)
           PY
       - run: |
