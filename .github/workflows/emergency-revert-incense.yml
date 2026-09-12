@@ -1,0 +1,35 @@
+name: Emergency restore menu
+on:
+  push:
+    paths:
+      - '.github/workflows/emergency-revert-incense.yml'
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Revert broken Incense patch
+        run: |
+          if git log -1 --format=%H | grep -q '^0471774a995021926585eb3b3cf65cecf2ae492b$'; then
+            echo 'Already restored'
+            exit 0
+          fi
+          if git log -5 --format=%H | grep -q '^50d91f425a46ccac0f122896fd90055d7c01d8a4$'; then
+            git revert --no-edit 50d91f425a46ccac0f122896fd90055d7c01d8a4
+          else
+            echo 'Target commit not at HEAD history; restoring only the duplicate Incense handler if present'
+            python - <<'PY'
+from pathlib import Path
+p=Path('index.html')
+s=p.read_text()
+s=s.replace("document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-spawns]');if(b){e.stopPropagation();showIncenseSpawns()}});",'')
+p.write_text(s)
+PY
+            git add index.html
+            git diff --cached --quiet || git commit -m 'Restore menu navigation'
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git push
