@@ -1,0 +1,35 @@
+name: Remove lower duplicate Incense
+on:
+  push:
+    paths:
+      - '.github/workflows/remove-lower-incense.yml'
+  workflow_dispatch:
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove only lower duplicate Incense section
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          block='<div class=section>Incense</div><button class="card click" data-incense-spawns="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">🌫️</span><div class=grow><div class=name>Spawns</div><div class=small>Pokémon fra det aktuelle event</div></div>›</div></button>'
+          n=s.count(block)
+          if n>1:
+              s=s.replace(block,'',1)
+          elif n==1:
+              s=s.replace(block,'',1)
+          else:
+              raise SystemExit('Lower Incense block not found; no change made')
+          p.write_text(s)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Remove lower duplicate Incense section'
+          git push
