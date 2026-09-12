@@ -2,7 +2,7 @@ name: Remove lower duplicate Incense
 on:
   push:
     paths:
-      - '.github/workflows/remove-lower-incense.yml'
+      - 'remove-lower-incense.trigger'
   workflow_dispatch:
 jobs:
   patch:
@@ -11,21 +11,18 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Remove only lower duplicate Incense section
+      - name: Remove only lower Incense section
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text()
-          block='<div class=section>Incense</div><button class="card click" data-incense-spawns="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">🌫️</span><div class=grow><div class=name>Spawns</div><div class=small>Pokémon fra det aktuelle event</div></div>›</div></button>'
-          n=s.count(block)
-          if n>1:
-              s=s.replace(block,'',1)
-          elif n==1:
-              s=s.replace(block,'',1)
-          else:
-              raise SystemExit('Lower Incense block not found; no change made')
+          old="if(tab==='incense')b.querySelector('#wild-content').innerHTML=dailyIncenseCards()+bonusCards(inc,'Incense');"
+          new="if(tab==='incense')b.querySelector('#wild-content').innerHTML=dailyIncenseCards();"
+          if old not in s:
+              raise SystemExit('Expected Incense render line not found; no change made')
+          s=s.replace(old,new,1)
           p.write_text(s)
           PY
           git config user.name 'github-actions[bot]'
