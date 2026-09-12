@@ -28,12 +28,16 @@ jobs:
           text=re.sub(r'<[^>]+>',' ',html)
           text=re.sub(r'\s+',' ',text)
 
-          seasons=re.findall(r'GO Pass:\s*([A-Za-z]+)',text,re.I)
+          seasons=re.findall(r'GO Pass:\s*(?!Deluxe\b)([A-Za-z]+)',text,re.I)
           season=seasons[-1] if seasons else 'Aktuel GO Pass'
-          m=re.search(r'Rank\s*(\d+).{0,500}?2[×x] Daily Adventure Incense duration',text,re.I)
-          if not m:
-              m=re.search(r'2[×x] Daily Adventure Incense duration.{0,500}?Rank\s*(\d+)',text,re.I)
-          rank=int(m.group(1)) if m else 50
+
+          bonus=re.search(r'2[×x]\s*Daily Adventure Incense duration',text,re.I)
+          rank=50
+          if bonus:
+              prefix=text[max(0,bonus.start()-200):bonus.start()]
+              ranks=re.findall(r'Rank\s*(\d+)',prefix,re.I)
+              if ranks:
+                  rank=int(ranks[-1])
 
           data={
             'season':f'GO Pass: {season}',
@@ -86,5 +90,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html dai-info.json
-          git diff --cached --quiet || git commit -m 'Expand Daily Adventure Incense duration information'
+          git diff --cached --quiet || git commit -m 'Fix current GO Pass detection'
           git push
