@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Remove duplicate declaration and validate
+      - name: Repair and validate scripts
         run: |
           set -e
           python3 - <<'PY'
@@ -19,17 +19,20 @@ jobs:
           s=p.read_text()
           marker="const TYPE_NAMES={1:'Normal',2:'Kamp',3:'Flyvende',4:'Gift',5:'Jord',6:'Klippe',7:'Bug',8:'Spøgelse',9:'Stål',10:'Ild',11:'Vand',12:'Græs',13:'Elektrisk',14:'Psykisk',15:'Is',16:'Drage',17:'Mørke',18:'Fe'};"
           while s.count(marker)>1:
-              first=s.find(marker)
-              second=s.find(marker,first+len(marker))
+              second=s.find(marker,s.find(marker)+len(marker))
               s=s[:second]+s[second+len(marker):]
           p.write_text(s)
           PY
           python3 - <<'PY'
           import re,subprocess
           s=open('index.html').read()
-          js=re.search(r'<script>([\s\S]*)</script>',s).group(1)
-          open('/tmp/app.js','w').write(js)
-          subprocess.run(['node','--check','/tmp/app.js'],check=True)
+          scripts=re.findall(r'<script>([\s\S]*?)</script>',s)
+          if not scripts: raise SystemExit('No scripts found')
+          for i,js in enumerate(scripts):
+              path=f'/tmp/app-{i}.js'
+              open(path,'w').write(js)
+              subprocess.run(['node','--check',path],check=True)
+          print('Validated',len(scripts),'script blocks')
           PY
       - name: Commit repair
         run: |
