@@ -4,8 +4,38 @@ on:
     paths:
       - 'index.html'
 jobs:
-  verify:
+  fix:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - run: node --check <(python3 -c "import re; s=open('index.html').read(); print(re.search(r'<script>([\\s\\S]*?)</script>',s).group(1))")
+      - name: Fix modal back behavior
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old="async function showIncenseSpawns(){\n  try{"
+          new="async function showIncenseSpawns(){\n  $('x').onclick=()=>$('modal').classList.remove('open');\n  try{"
+          if old not in s:
+              raise SystemExit('target not found')
+          p.write_text(s.replace(old,new,1))
+          PY
+      - name: Verify JavaScript syntax
+        run: |
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          s=Path('index.html').read_text()
+          js=re.search(r'<script>([\\s\\S]*?)</script>',s).group(1)
+          Path('/tmp/app.js').write_text(js)
+          subprocess.run(['node','--check','/tmp/app.js'],check=True)
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Fix Incense modal back button'
+          git push
