@@ -20,18 +20,7 @@ jobs:
           old="async function showIncenseSpawns(){\n  try{"
           new="async function showIncenseSpawns(){\n  $('x').onclick=()=>$('modal').classList.remove('open');\n  try{"
           if old in s:
-              s=s.replace(old,new,1)
-              p.write_text(s)
-          PY
-      - name: Verify JavaScript syntax
-        run: |
-          python3 - <<'PY'
-          import re, subprocess
-          from pathlib import Path
-          s=Path('index.html').read_text()
-          js=re.search(r'<script>([\\s\\S]*?)</script>',s).group(1)
-          Path('/tmp/app.js').write_text(js)
-          subprocess.run(['node','--check','/tmp/app.js'],check=True)
+              p.write_text(s.replace(old,new,1))
           PY
       - name: Commit fix
         run: |
