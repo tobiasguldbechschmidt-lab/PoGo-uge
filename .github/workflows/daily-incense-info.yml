@@ -1,6 +1,9 @@
 name: Daily Adventure Incense Info
 
 on:
+  push:
+    paths:
+      - '.github/workflows/daily-incense-info.yml'
   workflow_dispatch:
   schedule:
     - cron: '17 5 * * *'
@@ -49,13 +52,11 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import re
           p=Path('index.html')
           s=p.read_text()
           start=s.find('async function showDailyDuration(){')
           if start < 0:
               raise SystemExit('showDailyDuration not found')
-          end=s.find('\n',start)
           depth=0
           i=start
           in_str=None
