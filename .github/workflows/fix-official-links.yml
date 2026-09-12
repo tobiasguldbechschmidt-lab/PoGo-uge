@@ -1,0 +1,32 @@
+name: Fix official info links
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-official-links.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='/* OFFICIAL_LINK_CLICK_FIX */'
+          if marker not in s:
+              patch="""<script>\n/* OFFICIAL_LINK_CLICK_FIX */\ndocument.addEventListener('click',function(e){\n  const a=e.target.closest('a[data-official-url],a[href^=\"https://pokemongo.com/\"],a[href^=\"https://niantic.helpshift.com/\"]');\n  if(!a)return;\n  const u=a.dataset.officialUrl||a.href;\n  if(!u)return;\n  e.preventDefault();\n  e.stopPropagation();\n  window.location.assign(u);\n},true);\n</script>"""
+              s=s.replace('</body>',patch+'</body>')
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Make official info links clickable'
+          git push
