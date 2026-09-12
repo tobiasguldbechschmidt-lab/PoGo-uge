@@ -19,7 +19,8 @@ jobs:
           notes = [
               '<div class=note>Sorteret fra sjældnest til mindst sjælden. Listen viser den særlige Daily Adventure Incense-pool.</div>',
               '<div class=note>Sorteret fra sjældnest til mindst sjælden. Listen viser den særlige Daily Adventure Incense-Pool.</div>',
-              '<div class=note>Sorteret fra sjældnest til mindst sjælden.</div>'
+              '<div class=note>Sorteret fra sjældnest til mindst sjælden.</div>',
+              '<div class=note></div>'
           ]
           for note in notes:
               s=s.replace(note,'')
@@ -29,5 +30,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Remove empty Daily Incense note box'
+          git diff --cached --quiet || git commit -m 'Remove remaining empty Daily Incense box'
           git push
