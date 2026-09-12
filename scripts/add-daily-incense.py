@@ -1,4 +1,4 @@
-# trigger daily incense patch v3
+# trigger daily incense patch v4
 from pathlib import Path
 p=Path('index.html')
 s=p.read_text()
