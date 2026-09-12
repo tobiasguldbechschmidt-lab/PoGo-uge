@@ -1,0 +1,32 @@
+name: Increase info text
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/increase-info-text.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Increase information text size
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old='.modalbox{max-width:540px;margin:8vh auto;background:var(--p);border:1px solid var(--l);border-radius:18px;padding:16px}'
+          new=old+'.info-large{font-size:15px;line-height:1.65}.info-large .small{font-size:14px;line-height:1.6}.info-large .section{font-size:13px;margin-top:18px}'
+          if '.info-large{' not in s:
+              s=s.replace(old,new,1)
+          s=s.replace('<div id="mb"></div>','<div id="mb" class="info-large"></div>',1)
+          p.write_text(s)
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Make information text larger and easier to read'
+          git push
