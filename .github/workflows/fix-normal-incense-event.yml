@@ -1,0 +1,45 @@
+name: Fix normal Incense event link
+on:
+  push:
+    paths:
+      - 'index.html'
+      - '.github/workflows/fix-normal-incense-event.yml'
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove unrelated event from normal Incense details
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old='''<div class=section>Event</div><div class=card click data-event-url="${E(e.article_url||e.url||'')}"><span>${E(e.title)}</span><div class=small style="margin-top:7px">Åbn eventet ↗</div></div>'''
+          new='''<div class=section>Event</div><div class=card>${E(e.title)}</div>'''
+          if old in s:
+              s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          s=Path('index.html').read_text()
+          scripts=re.findall(r'<script(?: [^>]*)?>(.*?)</script>',s,re.S)
+          js='\n'.join(scripts)
+          with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False) as f:
+              f.write(js)
+              name=f.name
+          subprocess.run(['node','--check',name],check=True)
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Stop linking unrelated event from normal Incense details'
+          git push
