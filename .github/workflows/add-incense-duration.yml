@@ -14,10 +14,9 @@ jobs:
       - name: Restore known-good Incense UI
         run: |
           set -e
-          # The previous generated index introduced a stray fragment into the
-          # main script. Restore the last known-good index before adding nothing
-          # else. The normal Incense card is already present in this snapshot.
-          git checkout a72e8247eaca511665990fda772486049dadae4d -- index.html
+          # Fetch the exact known-good commit because checkout@v4 uses a shallow clone.
+          git fetch --no-tags --depth=1 origin a72e8247eaca511665990fda772486049dadae4d
+          git checkout FETCH_HEAD -- index.html
           python3 - <<'PY'
           from pathlib import Path
           import re, subprocess
