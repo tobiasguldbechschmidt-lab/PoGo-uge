@@ -5,73 +5,22 @@ on:
     paths:
       - '.github/workflows/fix-regular-incense.yml'
 jobs:
-  patch:
+  validate:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Fix Incense UI
-        shell: bash
+      - name: Validate JavaScript only
         run: |
-          python - <<'PY'
+          python3 - <<'PY'
           from pathlib import Path
-          import re
-          p=Path('index.html')
-          s=p.read_text()
-
-          # The Incense tab should contain only the Daily Adventure Incense
-          # cards and one regular Incense section with one Spawns button.
-          s=s.replace("if(tab==='incense')b.querySelector('#wild-content').innerHTML=dailyIncenseCards()+bonusCards(inc,'Incense');", "if(tab==='incense')b.querySelector('#wild-content').innerHTML=dailyIncenseCards();")
-
-          # Remove the accidental second regular Incense section/button if present.
-          dup=re.escape('<div class=section>Incense</div><button class="card click" data-incense-spawns="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">🌫️</span><div class=grow><div class=name>Spawns</div><div class=small>Pokémon fra det aktuelle event</div></div>›</div></button>')
-          s=re.sub(dup, '', s, count=1)
-
-          # Restore exactly one regular Incense section/button inside dailyIncenseCards.
-          marker='function dailyIncenseCards(){'
-          start=s.find(marker)
-          end=s.find("\nasync function showIncenseSpawns(){", start)
-          if start!=-1 and end!=-1:
-              block=s[start:end]
-              if 'data-incense-spawns' not in block:
-                  block=block.rstrip()
-                  if block.endswith("'}"):
-                      block=block[:-2]+"<div class=section>Incense</div><button class=\\\"card click\\\" data-incense-spawns=\\\"1\\\" style=\\\"width:100%;text-align:left\\\"><div class=row><span style=\\\"font-size:25px\\\">🌫️</span><div class=grow><div class=name>Spawns</div><div class=small>Pokémon fra det aktuelle event</div></div>›</div></button>'}"
-                  s=s[:start]+block+s[end:]
-
-          # Replace the regular Incense modal with clickable Pokémon cards.
-          marker='async function showIncenseSpawns(){'
-          start=s.find(marker)
-          end=s.find('async function showDailyDuration(){', start)
-          if start!=-1 and end!=-1:
-              new=r'''async function showIncenseSpawns(){
-            try{
-              let a=await ev(),n=N(),active=a.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n));
-              active.sort((x,y)=>(y.start||0)-(x.start||0));
-              let e=active.find(e=>{let d=e.details||{};return Object.keys(d).some(k=>/incense/i.test(k)&&Array.isArray(d[k])&&d[k].some(v=>v&&v.name))})||active.find(e=>Array.isArray(e.details?.spawns)&&e.details.spawns.length);
-              if(!e){open('<h2>Incense</h2><div class=note>Der er ingen aktive event-spawns til Incense lige nu.</div>');return}
-              let d=e.details||{},vals=[];Object.keys(d).forEach(k=>{if(/incense/i.test(k)&&Array.isArray(d[k]))vals.push(...d[k])});
-              if(!vals.length&&Array.isArray(d.spawns))vals=d.spawns;
-              let list=[];vals.forEach(v=>{if(v&&v.name&&!list.some(x=>x.name===v.name))list.push(v)});
-              if(!list.length){open(`<h2>Incense</h2><div class=small>${E(e.title)}</div><div class=note>Ingen Incense-spawns er registreret for dette event endnu.</div>`);return}
-              open(`<h2>Incense</h2><div class=small>${E(e.title)}</div><div class=section>Spawns</div>${list.map((p,i)=>`<div class="card click" data-inc-p="${i}"><div class=row><div class=img>${p.asset_url?`<img src="${E(p.asset_url)}" alt="${E(p.name)}" loading="lazy">`:'🌫️'}</div><div class=grow><div class=name>${E(p.name)}</div><div class=small>${p.shiny_available===true?'✨ Shiny mulig':'Shiny ikke oplyst'}</div></div>›</div></div>`).join('')}`);
-              document.querySelectorAll('[data-inc-p]').forEach(x=>x.onclick=async()=>{
-                let p=list[+x.dataset.incP],q=await poke(pid(p)),ts=[];
-                let add=v=>{if(v==null)return;if(Array.isArray(v)){v.forEach(add);return}if(typeof v==='object'){add(v.name??v.type??v.value??v.typeName);return}let z=typeof v==='number'?TYPE_NAMES[v]:String(v).trim();if(z&&!ts.includes(z))ts.push(z)};
-                add(q?.types);add(q?.type);add(q?.type1);add(q?.type2);add(q?.data?.types);add(q?.data?.type);add(q?.data?.type1);add(q?.data?.type2);add(p?.types);add(p?.type);add(p?.type1);add(p?.type2);
-                $('x').onclick=()=>showIncenseSpawns();
-                open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${E(ts.join(' · ')||'Ikke oplyst')}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div><div class=section>Event</div><div class=card>${E(e.title)}</div>`);
-              });
-            }catch(err){open('<h2>Incense</h2><div class=note>Kunne ikke hente Incense-spawns. Tryk ↻ og prøv igen.</div>')}
-          }
-          '''
-              s=s[:start]+new+s[end:]
-
-          p.write_text(s)
+          import re, subprocess
+          s=Path('index.html').read_text()
+          scripts=re.findall(r'<script[^>]*>([\s\S]*?)</script>',s)
+          for i,js in enumerate(scripts):
+              f=f'/tmp/pogo-{i}.js'
+              Path(f).write_text(js)
+              subprocess.run(['node','--check',f],check=True)
+          print('JavaScript validated; no legacy UI rewrite performed.')
           PY
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          git diff --cached --quiet || git commit -m 'Fix Incense Pokémon clicks and duplicate section'
-          git push
