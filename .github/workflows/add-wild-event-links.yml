@@ -42,16 +42,80 @@ jobs:
           new_fn = r'''async function wild(){let b=$('wild');try{let a=await ev(),n=N(),m=new Map(),inc=[],lure=[];a.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n)).forEach(e=>{let title=e.title||'Event',url=e.article_url||e.url||'';(e.details?.spawns||e.spawns||[]).forEach(p=>{let k=String(p.name||p.id||p.dex||'');if(!k)return;if(!m.has(k))m.set(k,{...p,name:p.name||'Pokémon',events:[]});let q=m.get(k);if(!q.events.some(v=>v.title===title))q.events.push({title,url})});(e.details?.bonuses||[]).forEach(v=>{let t=typeof v==='string'?v:v.text||v.name||'';if(/incense/i.test(t))inc.push([title,t]);if(/lure/i.test(t))lure.push([title,t])})});let a1=[...m.values()];let unique=x=>x.filter((v,i)=>x.findIndex(y=>y[0]===v[0]&&y[1]===v[1])===i);inc=unique(inc);lure=unique(lure);function eventCards(){return a1.length?'<div class=section>Event-Pokémon i det fri</div>'+a1.map((p,i)=>`<div class="card click" data-w="${i}"><div class=row><div class=img>${p.asset_url?`<img src="${E(p.asset_url)}">`:'🌿'}</div><div class=grow><div class=name>${E(p.name)}</div><div class=small>${E(p.events.map(v=>v.title).join(' · ')||'Event-spawn')}</div></div>›</div></div>`).join(''):'<div class=note>Ingen aktive event-spawns registreret.</div>'}function bonusCards(ls,label){return ls.length?'<div class=section>'+label+'</div>'+ls.map(x=>`<div class=card><b>${E(x[0])}</b><div class=small>• ${E(x[1])}</div></div>`).join(''):'<div class=note>Ingen aktive '+label.toLowerCase()+' angivet.</div>'}function render(tab){b.querySelectorAll('[data-wtab]').forEach(x=>x.classList.toggle('active',x.dataset.wtab===tab));if(tab==='event')b.querySelector('#wild-content').innerHTML=eventCards();if(tab==='incense')b.querySelector('#wild-content').innerHTML=dailyIncenseCards();if(tab==='lure')b.querySelector('#wild-content').innerHTML=bonusCards(lure,'Lure Modules');b.querySelectorAll('[data-daily]').forEach(x=>x.onclick=()=>showDailyIncense());b.querySelectorAll('[data-w]').forEach(x=>x.onclick=async()=>{let p=a1[+x.dataset.w],q=await poke(pid(p)),t=[];const addT=v=>{if(v==null)return;if(Array.isArray(v)){v.forEach(addT);return}if(typeof v==='object'){addT(v.name??v.type??v.value??v.typeName);return}let z=typeof v==='number'?TYPE_NAMES[v]:String(v).trim();if(z&&!t.includes(z))t.push(z)};[q?.types,q?.type,q?.type1,q?.type2,q?.data?.types,q?.data?.type,q?.data?.type1,q?.data?.type2,p?.types,p?.type,p?.type1,p?.type2].forEach(addT);let events=p.events||[];open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${t.map(v=>E(v)).join(' · ')||'Ikke oplyst'}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div><div class=section>Hvorfor spawner den?</div>${events.length?events.map(v=>`<div class="card click" data-event-url="${E(v.url||'')}" ${v.url?'':'style="cursor:default"'}><div class=name>${E(v.title)}</div>${v.url?'<div class=small style="margin-top:5px">Åbn eventet ↗</div>':'<div class=small style="margin-top:5px">Event-link ikke oplyst.</div>'}</div>`).join(''):'<div class=card><div class=small>Event ikke oplyst.</div></div>'}`)})}b.innerHTML=`<div class="wild-tabs"><button class="wild-tab active" data-wtab="event">Event-spawns</button><button class="wild-tab" data-wtab="incense">Incense</button><button class="wild-tab" data-wtab="lure">Lure</button></div><div id="wild-content"></div>`;b.querySelectorAll('[data-wtab]').forEach(x=>x.onclick=()=>render(x.dataset.wtab));render('event');up()}catch(e){b.innerHTML='<div class=note>Kunne ikke hente wild-data.</div>'}}'''
 
           s = s[:start] + new_fn + s[end:]
-          # Ensure every script remains syntactically valid before committing.
           scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', s, re.S | re.I)
           for i, code in enumerate(scripts, 1):
               p = Path(f'/tmp/script-{i}.js')
               p.write_text(code, encoding='utf-8')
               subprocess.run(['node', '--check', str(p)], check=True)
-
           if s.count('async function wild(){') != 1:
               raise SystemExit('wild() count check failed')
-          for required in ['Hvorfor spawner den?', 'Åbn eventet ↗', 'data-event-url']:
+
+          path.write_text(s, encoding='utf-8')
+
+      - name: Patch only normal Incense spawn details
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          import subprocess
+
+          path = Path('index.html')
+          s = path.read_text(encoding='utf-8')
+          start = s.index('async function showIncenseSpawns(){')
+          brace = s.index('{', start)
+          depth = 0
+          end = None
+          for i in range(brace, len(s)):
+              if s[i] == '{':
+                  depth += 1
+              elif s[i] == '}':
+                  depth -= 1
+                  if depth == 0:
+                      end = i + 1
+                      break
+          if end is None:
+              raise SystemExit('Could not find end of showIncenseSpawns()')
+
+          new_fn = r'''async function showIncenseSpawns(){
+  $('x').onclick=()=>$('modal').classList.remove('open');
+  try{
+    let a=await ev(),n=N(),all=[];
+    a.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n)).forEach(e=>{
+      let d=e.details||{},vals=[];
+      Object.keys(d).forEach(k=>{if(/incense/i.test(k)&&Array.isArray(d[k]))vals.push(...d[k])});
+      if(!vals.length&&Array.isArray(d.spawns))vals=d.spawns;
+      vals.forEach(p=>{
+        let name=String(p.name||p.pokemon||'').trim();
+        if(!name)return;
+        let old=all.find(x=>x.name.toLowerCase()===name.toLowerCase());
+        let event={title:e.title||'Event',url:e.article_url||e.url||''};
+        if(!old){old={...p,name,events:[]};all.push(old)}
+        if(!old.events.some(x=>x.title===event.title))old.events.push(event);
+      });
+    });
+    if(!all.length){open('<h2>Incense</h2><div class=note>Ingen aktive Incense-spawns er registreret lige nu.</div>');return}
+    let h='<h2>Incense</h2><div class=section>Spawns</div>';
+    h+=all.map((p,i)=>`<div class="card click" data-inc-event-p="${i}"><div class=row><div class=img>${p.asset_url?`<img src="${E(p.asset_url)}">`:'🌿'}</div><div class=grow><div class=name>${E(p.name)}</div><div class=small>${E(p.events.map(x=>x.title).join(' · '))}</div></div>›</div></div>`).join('');
+    open(h);
+    document.querySelectorAll('[data-inc-event-p]').forEach(x=>x.onclick=async()=>{
+      let p=all[+x.dataset.incEventP],q=await poke(pid(p)),ts=[];
+      let add=v=>{if(v==null)return;if(Array.isArray(v)){v.forEach(add);return}if(typeof v==='object'){add(v.name??v.type??v.value??v.typeName);return}let z=typeof v==='number'?TYPE_NAMES[v]:String(v).trim();if(z&&!ts.includes(z))ts.push(z)};
+      [q?.types,q?.type,q?.type1,q?.type2,q?.data?.types,q?.data?.type,q?.data?.type1,q?.data?.type2,p?.types,p?.type,p?.type1,p?.type2].forEach(add);
+      let evs=p.events||[];
+      open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${ts.map(v=>E(v)).join(' · ')||'Ikke oplyst'}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div><div class=section>Hvilket event får den til at spawne?</div>${evs.map(v=>`<div class=card><div class=name>${E(v.title)}</div>${v.url?`<p><button class="btn" type="button" data-event-url="${E(v.url)}" style="width:100%;cursor:pointer">Åbn eventet ↗</button></p>`:'<div class=small style="margin-top:5px">Event-link ikke oplyst.</div>'}</div>`).join('')}`);
+    });
+  }catch(e){open('<h2>Incense</h2><div class=note>Kunne ikke hente Incense-spawns. Tryk ↻ igen.</div>')}
+}'''
+
+          s = s[:start] + new_fn + s[end:]
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', s, re.S | re.I)
+          for i, code in enumerate(scripts, 1):
+              p = Path(f'/tmp/incense-script-{i}.js')
+              p.write_text(code, encoding='utf-8')
+              subprocess.run(['node', '--check', str(p)], check=True)
+          if s.count('async function showIncenseSpawns(){') != 1:
+              raise SystemExit('showIncenseSpawns count check failed')
+          for required in ['Hvilket event får den til at spawne?', 'Åbn eventet ↗', 'data-inc-event-p']:
               if required not in s:
                   raise SystemExit(f'Missing required text: {required}')
 
@@ -67,5 +131,5 @@ jobs:
             exit 0
           fi
           git add index.html
-          git commit -m 'Add event links to wild Pokemon details'
+          git commit -m 'Add normal Incense spawn event details'
           git push
