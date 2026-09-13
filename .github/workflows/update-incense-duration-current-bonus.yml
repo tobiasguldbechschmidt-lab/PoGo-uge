@@ -1,4 +1,4 @@
-name: Update regular Incense current bonus duration
+name: Update regular Incense current bonus
 on:
   push:
     paths:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Make regular Incense duration independent of events
+      - name: Fix regular Incense current bonus
         run: |
           set -e
           python3 - <<'PY'
@@ -20,7 +20,17 @@ jobs:
           s=p.read_text()
           pat=r'function showIncenseDuration\(\)\{[\s\S]*?\}\s*(?=function |document\.addEventListener|</script>)'
           repl="""function showIncenseDuration(){
-          let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel status</div><div class=card><b>Ingen eventbonus</b><div class=small>Daily Adventure Incense-bonusser påvirker ikke almindelig Incense. Eventer vises ikke her.</div></div><div class=section>Vigtigt</div><div class=card><div class=small>Almindelig Incense kan kun få længere varighed, når et event specifikt angiver en bonus for almindelig Incense. Denne visning bruger ikke Daily Adventure Incense-bonusser.</div></div>';
+          let now=N(),a=C.ev||[],active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));
+          let bonus=active.find(e=>{
+            let txt=JSON.stringify(e||{}).toLowerCase();
+            if(!e.article_url)return false;
+            if(/daily adventure incense|daily adventure|adventure incense/.test(txt))return false;
+            return /incense/.test(txt)&&/(incense duration|incense lasts|incense will last|duration of incense|incense.*(?:60 minutes|2 hours|3 hours|longer|increased|increase|duration)|(?:60 minutes|2 hours|3 hours).*incense)/.test(txt);
+          });
+          let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';
+          if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event giver en bonus til almindelig Incense-varighed.</div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>';
+          else h+='<div class=note>Ingen aktiv bonus til almindelig Incense registreret lige nu.</div>';
+          h+='<div class=section>Vigtigt</div><div class=card><div class=small>Daily Adventure Incense-bonusser tæller ikke som bonus til almindelig Incense. Et event vises kun her, når eventdataene specifikt angiver en ændring af den almindelige Incense-varighed.</div></div>';
           open(h)
           }
           """
@@ -42,5 +52,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Remove event bonus from regular Incense duration'
+          git diff --cached --quiet || git commit -m 'Fix regular Incense current bonus detection'
           git push
