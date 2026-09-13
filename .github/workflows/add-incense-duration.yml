@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore full regular Incense duration info
+      - name: Restore regular Incense UI in the correct section
         run: |
           set -e
           python3 - <<'PY'
@@ -20,18 +20,31 @@ jobs:
           p=Path('index.html')
           s=p.read_text()
 
-          duration='<div class=section>Varighed</div><button class="card click" data-incense-duration="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Normal varighed – 60 minutter</div></div>›</div></button>'
+          duration="<div class=section>Normal Incense</div><button class=\"card click\" data-incense-duration=\"1\" style=\"width:100%;text-align:left\"><div class=row><span style=font-size:25px>⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Normal varighed – 60 minutter</div></div>›</div></button>"
+
+          # Remove the duration card from the Daily Adventure Incense block if an older version put it there.
           start=s.find('function dailyIncenseCards(){return ')
           end=s.find('function showDailyIncense',start)
           if start<0 or end<0:
               raise SystemExit('dailyIncenseCards not found')
           block=s[start:end]
-          if 'data-incense-duration' not in block:
-              pos=block.rfind("'}")
-              if pos<0: raise SystemExit('dailyIncenseCards end not found')
-              block=block[:pos]+duration+block[pos:]
-              s=s[:start]+block+s[end:]
+          block=re.sub(r"\+incenseDurationCard\(\)","",block)
+          s=s[:start]+block+s[end:]
 
+          # Make a dedicated normal-Incense section. Keep Daily Adventure Incense separate.
+          normal_fn="function regularIncenseCards(){return '"+duration.replace("'","\\'")+"'}"
+          if 'function regularIncenseCards()' in s:
+              s=re.sub(r'function regularIncenseCards\(\)\{return [\s\S]*?\}\s*(?=function dailyIncenseCards)',normal_fn+'\n',s,count=1)
+          else:
+              anchor='function dailyIncenseCards(){'
+              if anchor not in s: raise SystemExit('dailyIncenseCards anchor not found')
+              s=s.replace(anchor,normal_fn+'\n'+anchor,1)
+
+          # The Incense tab should show normal Incense first, then Daily Adventure Incense.
+          s=s.replace("if(tab==='incense')b.querySelector('#wild-content').innerHTML=dailyIncenseCards();","if(tab==='incense')b.querySelector('#wild-content').innerHTML=regularIncenseCards()+dailyIncenseCards();")
+          s=s.replace("if(tab==='incense')b.querySelector('#wild-content').innerHTML=dailyIncenseCards()+bonusCards(inc,'Incense');","if(tab==='incense')b.querySelector('#wild-content').innerHTML=regularIncenseCards()+dailyIncenseCards()+bonusCards(inc,'Incense');")
+
+          # Ensure the detail popup contains the requested structure.
           fn="""function showIncenseDuration(){
           let now=N(),a=C.ev||[],active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));
           let bonus=active.find(e=>{
@@ -43,13 +56,13 @@ jobs:
           let h='<h2>Incense · Varighed</h2>';
           h+='<div class=section>Normal varighed</div><div class=card><b>Normal varighed – 60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div>';
           h+='<div class=section>1. Aktuel bonus</div>';
-          if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event ændrer varigheden for almindelig Incense.</div><p><button class="btn" type="button" data-event-url="'+E(bonus.article_url)+'" style="width:100%;cursor:pointer">Åbn eventet ↗</button></p></div>';
+          if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event ændrer varigheden for almindelig Incense.</div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>';
           else h+='<div class=note>Ingen aktiv bonus til almindelig Incense registreret lige nu.</div>';
           h+='<div class=section>2. Sådan virker det</div><div class=card><div class=small>• Normal Incense varer 60 minutter.<br>• Særlige events kan ændre varigheden.<br>• Varigheden gælder almindelig Incense og er adskilt fra Daily Adventure Incense.</div></div>';
-          h+='<div class=section>3. Officiel info</div><div class=card><div class=small>Niantics officielle hjælpecenter beskriver almindelig Incense som normalt 60 minutter og bemærker, at særlige events kan forlænge varigheden.</div><p><button class="btn" type="button" data-external-url="https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en" style="width:100%;cursor:pointer">Åbn officiel Incense-info ↗</button></p></div>';
-          h+='<div class=section>4. Stacking – op til 24 timer</div><div class=card><div class=small>Du kan aktivere flere almindelige Incense for at lægge varigheden sammen. Den samlede varighed kan stables op til 24 timer. Det betyder, at du kan bruge flere Incense efter hinanden uden at skulle starte en ny hvert 60. minut.</div></div>';
-          h+='<div class=section>5. Daily Adventure Incense</div><div class=card><div class=small>Daily Adventure Incense er en separat Incense-type. Den varer 15 minutter og tiltrækker vilde Pokémon, mens du bevæger dig i den virkelige verden. Den skal derfor ikke blandes sammen med normal Incense eller dens 60-minutters varighed.</div></div>';
-          h+='<div class=section>6. GO Pass-events</div><div class=card><div class=small>Et GO Pass-event vises ikke som normal Incense-bonus, medmindre eventdataene specifikt dokumenterer, at eventet faktisk ændrer varigheden for almindelig Incense. Bonusser, der kun gælder Daily Adventure Incense, holdes uden for normal Incense.</div></div>';
+          h+='<div class=section>3. Officiel info</div><div class=card><div class=small>Niantics officielle hjælpecenter beskriver almindelig Incense som normalt 60 minutter og særlige eventændringer separat.</div><p><button class=\"btn\" type=\"button\" data-external-url=\"https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en\" style=\"width:100%;cursor:pointer\">Åbn officiel Incense-info ↗</button></p></div>';
+          h+='<div class=section>4. Stacking – op til 24 timer</div><div class=card><div class=small>Flere almindelige Incense kan stables, så den samlede varighed kan nå op til 24 timer.</div></div>';
+          h+='<div class=section>5. Daily Adventure Incense</div><div class=card><div class=small>Daily Adventure Incense er en separat Incense-type med sin egen varighed. Den skal ikke blandes sammen med normal Incense.</div></div>';
+          h+='<div class=section>6. GO Pass-events</div><div class=card><div class=small>Et GO Pass-event vises ikke som normal Incense-bonus, medmindre eventdataene specifikt dokumenterer, at eventet faktisk ændrer almindelig Incense.</div></div>';
           open(h)
           }
           """
@@ -66,11 +79,8 @@ jobs:
 
           p.write_text(s)
           scripts=re.findall(r'<script[^>]*>([\\s\\S]*?)</script>',s)
-          if not scripts: raise SystemExit('No script blocks')
           for i,js in enumerate(scripts):
-              f=f'/tmp/pogo-{i}.js'
-              Path(f).write_text(js)
-              subprocess.run(['node','--check',f],check=True)
+              f=f'/tmp/pogo-{i}.js'; Path(f).write_text(js); subprocess.run(['node','--check',f],check=True)
           print('JavaScript validated')
           PY
       - name: Commit UI
@@ -78,5 +88,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Clarify regular Incense duration and bonuses'
+          git diff --cached --quiet || git commit -m 'Place regular Incense duration under normal Incense'
           git push
