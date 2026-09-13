@@ -1,8 +1,9 @@
-name: Update regular Incense current bonus
+name: Update regular Incense information
 on:
   push:
     paths:
       - '.github/workflows/update-incense-duration-current-bonus.yml'
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -10,49 +11,80 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix regular Incense current bonus
+      - name: Replace only the regular Incense popup
         run: |
           set -e
           python3 - <<'PY'
           from pathlib import Path
-          import re
+          import subprocess, re
           p=Path('index.html')
           s=p.read_text()
-          s=re.sub(r'<script id="regular-incense-duration-inject">[\s\S]*?</script>', '', s, count=1)
-          pat=r'function showIncenseDuration\(\)\{[\s\S]*?\}\s*(?=function |document\.addEventListener|</script>)'
-          repl="""function showIncenseDuration(){
+          start=s.find('function showIncenseDuration(){')
+          if start < 0:
+              raise SystemExit('showIncenseDuration not found')
+          depth=0
+          in_str=None
+          esc=False
+          end=None
+          i=start
+          while i<len(s):
+              c=s[i]
+              if in_str:
+                  if esc: esc=False
+                  elif c=='\\': esc=True
+                  elif c==in_str: in_str=None
+              else:
+                  if c in "'\"`": in_str=c
+                  elif c=='{': depth+=1
+                  elif c=='}':
+                      depth-=1
+                      if depth==0:
+                          end=i+1
+                          break
+              i+=1
+          if end is None:
+              raise SystemExit('Could not find end of showIncenseDuration')
+          new_fn=r'''function showIncenseDuration(){
           let now=N(),a=C.ev||[],active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));
           let bonus=active.find(e=>{
-            if(!e.article_url)return false;
             let txt=JSON.stringify(e||{}).toLowerCase();
+            if(!e.article_url)return false;
             if(/daily adventure incense|daily adventure|adventure incense/.test(txt))return false;
-            return /(?:incense activated during|incense lasts|incense will last|incense duration is|incense duration increased|incense duration increase|incense.*(?:2 hours|3 hours|longer|increased))/.test(txt);
+            if(/go pass/.test(txt)&&!/regular incense|normal incense|standard incense/.test(txt))return false;
+            return /(?:normal incense|regular incense|standard incense).*(?:2 hours|3 hours|longer|increased|duration)|incense (?:will )?lasts? (?:2|3) hours|incense duration (?:is )?(?:2|3) hours|incense duration (?:increased|increase)/.test(txt);
           });
-          let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';
-          if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event ændrer varigheden for almindelig Incense.</div><p><button class="btn" type="button" data-event-url="'+E(bonus.article_url)+'" style="width:100%;cursor:pointer">Åbn eventet ↗</button></p></div>';
-          else h+='<div class=note>Ingen aktiv bonus til almindelig Incense lige nu.</div>';
-          h+='<div class=section>Sådan virker det</div><div class=card><div class=small>Almindelig Incense varer normalt 60 minutter. Et event vises kun her, hvis eventdataene specifikt siger, at almindelig Incense varer længere. Daily Adventure Incense-bonusser bruges ikke.</div></div>';
+          let h='<h2>Normal Incense · Varighed</h2>';
+          h+='<div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Normal Incense varer normalt 60 minutter.</div></div>';
+          h+='<div class=section>Aktuel bonus</div>';
+          if(bonus) h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event ændrer specifikt varigheden for normal Incense.</div><p><button class="btn" type="button" data-event-url="'+E(bonus.article_url)+'" style="width:100%;cursor:pointer">Åbn eventet ↗</button></p></div>';
+          else h+='<div class=note>Ingen aktiv bonus ændrer varigheden for normal Incense lige nu.</div>';
+          h+='<div class=section>Sådan virker det</div><div class=card><div class=small>Normal Incense tiltrækker Pokémon til din placering. Den normale varighed er 60 minutter. Under særlige events kan varigheden blive forlænget, men kun events der faktisk ændrer normal Incense vises som en bonus her.</div></div>';
+          h+='<div class=section>Stacking op til 24 timer</div><div class=card><div class=small>Du kan aktivere flere almindelige Incense, så varigheden af effekten lægges sammen. Den samlede varighed kan stables op til 24 timer.</div></div>';
+          h+='<div class=section>Officiel info</div><div class=card><div class=small>Niantic oplyser, at normal Incense typisk varer 60 minutter, kan vare længere under særlige events og kan stackes op til 24 timer.</div><p><a class="btn" href="https://niantic.helpshift.com/hc/en-us/6-pokemon-go/faq/2480-what-are-incense/" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Officiel Pokémon GO Help Center ↗</a></p></div>';
+          h+='<div class=section>Daily Adventure Incense</div><div class=card><div class=small>Daily Adventure Incense er en separat Incense-type. Den varer normalt 15 minutter og kræver bevægelse i den virkelige verden for at tiltrække Pokémon. Dens information og eventuelle bonusser hører til under Daily Adventure Incense og blandes ikke med normal Incense.</div></div>';
           open(h)
-          }
-          """
-          ns,n=re.subn(pat,repl,s,count=1)
-          if n!=1: raise SystemExit('showIncenseDuration function not found')
-          p.write_text(ns)
+          }'''
+          p.write_text(s[:start]+new_fn+s[end:])
           PY
           python3 - <<'PY'
-          import re,subprocess
-          s=open('index.html').read()
-          scripts=re.findall(r'<script[^>]*>([\\s\\S]*?)</script>',s)
-          if not scripts: raise SystemExit('No scripts found')
+          from pathlib import Path
+          import re, subprocess
+          s=Path('index.html').read_text()
+          scripts=re.findall(r'<script[^>]*>([\s\S]*?)</script>',s)
+          if not scripts: raise SystemExit('No JavaScript found')
           for i,js in enumerate(scripts):
-              f=f'/tmp/pogo-{i}.js'; open(f,'w').write(js); subprocess.run(['node','--check',f],check=True)
-          if 'regular-incense-duration-inject' in s: raise SystemExit('duplicate injector remains')
-          print('Validated',len(scripts),'script blocks')
+              f=f'/tmp/pogo-{i}.js'
+              Path(f).write_text(js)
+              subprocess.run(['node','--check',f],check=True)
+          for required in ['Normal varighed','Aktuel bonus','Sådan virker det','Stacking op til 24 timer','Officiel info','Daily Adventure Incense']:
+              if required not in s: raise SystemExit('Missing: '+required)
+          if s.count('function showIncenseDuration(){') != 1: raise SystemExit('Duplicate showIncenseDuration')
+          print('Regular Incense popup validated successfully.')
           PY
-      - name: Commit patch
+      - name: Commit validated change
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Remove duplicate regular Incense duration injector'
+          git diff --cached --quiet || git commit -m 'Add complete normal Incense duration information'
           git push
