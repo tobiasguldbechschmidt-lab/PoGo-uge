@@ -10,23 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Add actual duration to current bonus
+      - name: Fix regular Incense bonus detection
         run: |
           set -e
           python3 - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text()
-          old="var h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';"
-          new="var h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';\n    function bonusDuration(e){\n      var txt=JSON.stringify(e||{}).toLowerCase();\n      var m=txt.match(/(\\d+)\\s*(?:hours?|timer)/);\n      if(m)return m[1]+' timer';\n      m=txt.match(/(\\d+)\\s*(?:minutes?|minutter)/);\n      if(m)return m[1]+' minutter';\n      m=txt.match(/(\\d+)\\s*[×x]\\s*(?:incense\\s*)?duration|(?:incense\\s*)?(?:duration|varighed)\\s*[=:]?\\s*(\\d+)\\s*[×x]/);\n      if(m){var mult=Number(m[1]||m[2]);if(mult>1)return (60*mult)+' minutter';}\n      m=txt.match(/(\\d+)\\s*[×x]\\s*(?:incense|incense duration)/);\n      if(m&&Number(m[1])>1)return (60*Number(m[1]))+' minutter';\n      return null;\n    }"
-          if old not in s:
-              raise SystemExit('duration header not found')
-          s=s.replace(old,new,1)
-          old2="if(bonus){h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event kan forlænge Incense-varigheden.</div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>'}"
-          new2="if(bonus){var bd=bonusDuration(bonus);h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event kan forlænge Incense-varigheden.</div><div style=\"margin-top:8px\"><b>Varighed under bonus: '+E(bd||'længere end normalt')+'</b></div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>'}"
-          if old2 not in s:
-              raise SystemExit('bonus card not found')
-          s=s.replace(old2,new2,1)
+          old="let bonus=active.find(e=>e.article_url&&/incense/i.test(JSON.stringify(e.details||{}))&&/duration|varighed/i.test(JSON.stringify(e.details||{})));"
+          new="let bonus=active.find(e=>{let txt=JSON.stringify(e||{}).toLowerCase();let isInc=/incense/.test(txt);let isDaily=/daily adventure incense|daily adventure|adventure incense/.test(txt);let isDuration=/duration|varighed|timer|hours|minutes|minutter/.test(txt);return isInc&&!isDaily&&isDuration});"
+          if old in s:
+              s=s.replace(old,new,1)
+          old2="var txt=JSON.stringify(e||{}).toLowerCase();"
+          new2="var txt=JSON.stringify(e||{}).toLowerCase();\n      if(/daily adventure incense|daily adventure|adventure incense/.test(txt))return null;"
+          if old2 in s:
+              s=s.replace(old2,new2,1)
           p.write_text(s)
           PY
           python3 - <<'PY'
@@ -43,5 +41,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Show actual Incense bonus duration'
+          git diff --cached --quiet || git commit -m 'Ignore Daily Adventure Incense for regular Incense bonus'
           git push
