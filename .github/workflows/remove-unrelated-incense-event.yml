@@ -1,0 +1,42 @@
+name: Remove unrelated event from normal Incense
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/remove-unrelated-incense-event.yml'
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove event label from normal Incense details
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          old="<div class=section>Event</div><div class=card>${E(e.title)}</div>"
+          new=""
+          if old not in s:
+              raise SystemExit('Expected normal Incense Event block was not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+          node --check <(python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text()
+          m=re.search(r'<script>([\s\S]*?)</script>',s)
+          print(m.group(1) if m else '')
+          PY
+          )
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Hide unrelated event from normal Incense details'
+          git push
