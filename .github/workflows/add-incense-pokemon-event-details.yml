@@ -18,7 +18,7 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           old="open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${E(ts.join(' · ')||'Ikke oplyst')}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div>`);"
-          new="event_url=e.article_url||e.url||''; open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${E(ts.join(' · ')||'Ikke oplyst')}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div><div class=section>Hvilket event får den til at spawne?</div><div class=card><b>${E(e.title)}</b>${event_url?`<p><a class=\"btn\" href=\"${E(event_url)}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;text-align:center;text-decoration:none\">Åbn eventet ↗</a></p>`:'<div class=small style=\"margin-top:6px\">Event-link ikke oplyst.</div>'}</div>`);"
+          new="event_url=e.article_url||e.url||''; open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${E(ts.join(' · ')||'Ikke oplyst')}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div><div class=section>Hvilket event får den til at spawne?</div><div class=card><b>${E(e.title)}</b>${event_url?`<p><button class=\"btn\" type=\"button\" data-event-url=\"${E(event_url)}\" style=\"display:block;width:100%;text-align:center;cursor:pointer\">Åbn eventet ↗</button></p>`:'<div class=small style=\"margin-top:6px\">Event-link ikke oplyst.</div>'}</div>`);"
           if old not in s:
               raise SystemExit('Expected Incense Pokémon detail line was not found')
           s=s.replace(old,new,1)
@@ -27,7 +27,7 @@ jobs:
               with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False) as f:
                   f.write(js); name=f.name
               subprocess.run(['node','--check',name],check=True)
-          for required in ['Hvilket event får den til at spawne?','Åbn eventet ↗']:
+          for required in ['Hvilket event får den til at spawne?','Åbn eventet ↗','data-event-url']:
               if required not in s: raise SystemExit('Missing '+required)
           p.write_text(s,encoding='utf-8')
           PY
@@ -36,5 +36,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Show event causing normal Incense Pokémon spawn'
+          git diff --cached --quiet || git commit -m 'Make normal Incense event link clickable'
           git push
