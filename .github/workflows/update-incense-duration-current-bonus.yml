@@ -10,22 +10,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix regular Incense bonus detection
+      - name: Make regular Incense duration independent of events
         run: |
           set -e
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path('index.html')
           s=p.read_text()
-          old="let bonus=active.find(e=>e.article_url&&/incense/i.test(JSON.stringify(e.details||{}))&&/duration|varighed/i.test(JSON.stringify(e.details||{})));"
-          new="let bonus=active.find(e=>{let txt=JSON.stringify(e||{}).toLowerCase();let isInc=/incense/.test(txt);let isDaily=/daily adventure incense|daily adventure|adventure incense/.test(txt);let isDuration=/duration|varighed|timer|hours|minutes|minutter/.test(txt);return isInc&&!isDaily&&isDuration});"
-          if old in s:
-              s=s.replace(old,new,1)
-          old2="var txt=JSON.stringify(e||{}).toLowerCase();"
-          new2="var txt=JSON.stringify(e||{}).toLowerCase();\n      if(/daily adventure incense|daily adventure|adventure incense/.test(txt))return null;"
-          if old2 in s:
-              s=s.replace(old2,new2,1)
-          p.write_text(s)
+          pat=r'function showIncenseDuration\(\)\{[\s\S]*?\}\s*(?=function |document\.addEventListener|</script>)'
+          repl="""function showIncenseDuration(){
+          let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel status</div><div class=card><b>Ingen eventbonus</b><div class=small>Daily Adventure Incense-bonusser påvirker ikke almindelig Incense. Eventer vises ikke her.</div></div><div class=section>Vigtigt</div><div class=card><div class=small>Almindelig Incense kan kun få længere varighed, når et event specifikt angiver en bonus for almindelig Incense. Denne visning bruger ikke Daily Adventure Incense-bonusser.</div></div>';
+          open(h)
+          }
+          """
+          ns,n=re.subn(pat,repl,s,count=1)
+          if n!=1: raise SystemExit('showIncenseDuration function not found')
+          p.write_text(ns)
           PY
           python3 - <<'PY'
           import re,subprocess
@@ -41,5 +42,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Ignore Daily Adventure Incense for regular Incense bonus'
+          git diff --cached --quiet || git commit -m 'Remove event bonus from regular Incense duration'
           git push
