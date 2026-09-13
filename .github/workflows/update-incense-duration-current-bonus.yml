@@ -22,15 +22,15 @@ jobs:
           repl="""function showIncenseDuration(){
           let now=N(),a=C.ev||[],active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));
           let bonus=active.find(e=>{
-            let txt=JSON.stringify(e||{}).toLowerCase();
             if(!e.article_url)return false;
+            let txt=JSON.stringify(e||{}).toLowerCase();
             if(/daily adventure incense|daily adventure|adventure incense/.test(txt))return false;
-            return /incense/.test(txt)&&/(incense duration|incense lasts|incense will last|duration of incense|incense.*(?:60 minutes|2 hours|3 hours|longer|increased|increase|duration)|(?:60 minutes|2 hours|3 hours).*incense)/.test(txt);
+            return /(?:incense activated during|incense lasts|incense will last|incense duration is|incense duration increased|incense duration increase|incense.*(?:2 hours|3 hours|longer|increased))/.test(txt);
           });
           let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';
-          if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event giver en bonus til almindelig Incense-varighed.</div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>';
-          else h+='<div class=note>Ingen aktiv bonus til almindelig Incense registreret lige nu.</div>';
-          h+='<div class=section>Vigtigt</div><div class=card><div class=small>Daily Adventure Incense-bonusser tæller ikke som bonus til almindelig Incense. Et event vises kun her, når eventdataene specifikt angiver en ændring af den almindelige Incense-varighed.</div></div>';
+          if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event ændrer varigheden for almindelig Incense.</div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>';
+          else h+='<div class=note>Ingen aktiv bonus til almindelig Incense lige nu.</div>';
+          h+='<div class=section>Sådan virker det</div><div class=card><div class=small>Almindelig Incense varer normalt 60 minutter. Et event vises kun her, hvis eventdataene specifikt siger, at almindelig Incense varer længere. Daily Adventure Incense-bonusser bruges ikke.</div></div>';
           open(h)
           }
           """
@@ -41,7 +41,7 @@ jobs:
           python3 - <<'PY'
           import re,subprocess
           s=open('index.html').read()
-          scripts=re.findall(r'<script[^>]*>([\s\S]*?)</script>',s)
+          scripts=re.findall(r'<script[^>]*>([\\s\\S]*?)</script>',s)
           if not scripts: raise SystemExit('No scripts found')
           for i,js in enumerate(scripts):
               f=f'/tmp/pogo-{i}.js'; open(f,'w').write(js); subprocess.run(['node','--check',f],check=True)
@@ -52,5 +52,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Fix regular Incense current bonus detection'
+          git diff --cached --quiet || git commit -m 'Only show verified regular Incense duration bonuses'
           git push
