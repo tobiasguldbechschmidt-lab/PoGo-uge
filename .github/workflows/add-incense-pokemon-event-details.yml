@@ -20,27 +20,29 @@ jobs:
           start=s.find('async function showIncenseSpawns(){')
           if start<0:
               raise SystemExit('showIncenseSpawns was not found')
-          marker='async function showIncenseSpawns'
           end=s.find('\n}', start)
           if end<0:
               raise SystemExit('showIncenseSpawns end was not found')
           block=s[start:end+2]
           if 'Hvilket event får den til at spawne?' not in block:
               raise SystemExit('Expected Incense Pokémon event details are missing')
-          if 'data-event-url' not in block:
-              old='Åbn eventet ↗'
-              if old not in block:
-                  raise SystemExit('Expected Incense Pokémon event link was not found')
-              block=block.replace(old,'Åbn eventet ↗',1)
-          # Ensure the existing app-wide data-event-url handler receives the actual event URL.
-          block=block.replace('data-event-url="${E(e.article_url||e.url||\'\')}"','data-event-url="${E(e.article_url||e.url||\'\')}"',1)
+          if 'data-event-url="${E(event_url)}"' not in block:
+              raise SystemExit('Expected normal Incense event link was not found')
+          block=block.replace('data-event-url="${E(event_url)}"','data-incense-event-url="${E(event_url)}"',1)
           s=s[:start]+block+s[end+2:]
+          marker='function showIncenseDuration(){'
+          listener="document.addEventListener('click',e=>{let b=e.target.closest('[data-incense-event-url]');if(b){e.stopPropagation();let u=b.dataset.incenseEventUrl;if(u)window.open(u,'_blank','noopener,noreferrer')}});"
+          if '[data-incense-event-url]' not in s:
+              pos=s.find(marker)
+              if pos<0:
+                  raise SystemExit('showIncenseDuration marker was not found')
+              s=s[:pos]+listener+s[pos:]
           scripts=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S|re.I)
           for i,js in enumerate(scripts,1):
               with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False) as f:
                   f.write(js); name=f.name
               subprocess.run(['node','--check',name],check=True)
-          for required in ['Hvilket event får den til at spawne?','Åbn eventet ↗']:
+          for required in ['Hvilket event får den til at spawne?','Åbn eventet ↗','data-incense-event-url','window.open']:
               if required not in s:
                   raise SystemExit('Missing '+required)
           p.write_text(s,encoding='utf-8')
@@ -50,5 +52,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Make normal Incense event link clickable'
+          git diff --cached --quiet || git commit -m 'Make normal Incense event link open reliably'
           git push
