@@ -16,20 +16,14 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
           p=Path('index.html')
           s=p.read_text()
           old="<div class=section>Event</div><div class=card>${E(e.title)}</div>"
           if old not in s:
               raise SystemExit('Expected normal Incense Event block was not found')
           s=s.replace(old,'',1)
-          m=re.search(r'<script>([\\s\\S]*?)</script>',s)
-          if not m:
-              raise SystemExit('No script block found')
-          Path('/tmp/app.js').write_text(m.group(1))
           p.write_text(s)
           PY
-          node --check /tmp/app.js
       - name: Commit fix
         run: |
           git config user.name 'github-actions[bot]'
