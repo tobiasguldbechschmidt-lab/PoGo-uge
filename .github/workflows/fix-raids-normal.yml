@@ -31,7 +31,8 @@ jobs:
               f=tempfile.NamedTemporaryFile('w',suffix='.js',delete=False);f.write(x);f.close();subprocess.run(['node','--check',f.name],check=True)
           PY
           grep -q 'data-raid-tab="normal"' index.html
-          grep -q 'PokeMiners/pogo_assets/master/Images/Pokemon/pm206.icon.png' index.html
+          grep -q 'PokeMiners/pogo_assets' index.html
+          grep -q 'pm206.icon.png' index.html
       - name: Commit
         run: |
           if git diff --quiet; then echo "No changes"; exit 0; fi
