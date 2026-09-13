@@ -1,0 +1,41 @@
+name: Cleanup duplicate Incense duration UI
+on:
+  push:
+    paths:
+      - '.github/workflows/cleanup-incense-duration.yml'
+      - 'index.html'
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove duplicate duration injector
+        run: |
+          set -e
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          ns,n=re.subn(r'<script id="regular-incense-duration-inject">[\s\S]*?</script>', '', s, count=1)
+          if n:
+              p.write_text(ns)
+          PY
+          python3 - <<'PY'
+          import re,subprocess
+          s=open('index.html').read()
+          scripts=re.findall(r'<script[^>]*>([\s\S]*?)</script>',s)
+          for i,js in enumerate(scripts):
+              f=f'/tmp/pogo-{i}.js'; open(f,'w').write(js); subprocess.run(['node','--check',f],check=True)
+          if 'regular-incense-duration-inject' in s: raise SystemExit('duplicate injector remains')
+          print('Validated',len(scripts),'script blocks')
+          PY
+      - name: Commit cleanup
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Remove duplicate Incense duration UI'
+          git push
