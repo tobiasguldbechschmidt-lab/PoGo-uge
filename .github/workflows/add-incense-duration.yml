@@ -1,39 +1,27 @@
-name: Add regular Incense duration info
+name: Validate Incense UI
 on:
   push:
     paths:
       - index.html
       - .github/workflows/add-incense-duration.yml
 permissions:
-  contents: write
+  contents: read
 jobs:
-  fix:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore known-good Incense UI
+      - name: Validate JavaScript only
         run: |
-          set -e
-          # Fetch the exact known-good commit because checkout@v4 uses a shallow clone.
-          git fetch --no-tags --depth=1 origin a72e8247eaca511665990fda772486049dadae4d
-          git checkout FETCH_HEAD -- index.html
           python3 - <<'PY'
           from pathlib import Path
           import re, subprocess
           s=Path('index.html').read_text()
           scripts=re.findall(r'<script[^>]*>([\s\S]*?)</script>',s)
-          if not scripts:
-              raise SystemExit('No JavaScript found')
+          if not scripts: raise SystemExit('No JavaScript found')
           for i,js in enumerate(scripts):
               f=f'/tmp/pogo-{i}.js'
               Path(f).write_text(js)
               subprocess.run(['node','--check',f],check=True)
-          print('Known-good index.html JavaScript validated.')
+          print('JavaScript validated; no UI rewrite performed.')
           PY
-      - name: Commit restored UI
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          git diff --cached --quiet || git commit -m 'Restore menu-safe Incense UI'
-          git push
