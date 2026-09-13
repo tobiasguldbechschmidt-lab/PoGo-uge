@@ -20,7 +20,7 @@ jobs:
           p=Path('index.html')
           s=p.read_text()
 
-          duration='<div class=section>Varighed</div><button class="card click" data-incense-duration="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Se hvor længe Incense varer og aktive bonusser</div></div>›</div></button>'
+          duration='<div class=section>Varighed</div><button class="card click" data-incense-duration="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">⏱️</span><div class=grow><div class=name>Varighed</div><div class=small>Normal varighed – 60 minutter</div></div>›</div></button>'
           start=s.find('function dailyIncenseCards(){return ')
           end=s.find('function showDailyIncense',start)
           if start<0 or end<0:
@@ -40,12 +40,16 @@ jobs:
             if(/daily adventure incense|daily adventure|adventure incense/.test(txt))return false;
             return /incense/.test(txt)&&/(incense duration|incense lasts|incense will last|duration of incense|incense[^a-z]*(60 minutes|2 hours|3 hours|longer|increased|increase|duration)|(?:60 minutes|2 hours|3 hours)[^a-z]*incense)/.test(txt);
           });
-          let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';
+          let h='<h2>Incense · Varighed</h2>';
+          h+='<div class=section>Normal varighed</div><div class=card><b>Normal varighed – 60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div>';
+          h+='<div class=section>1. Aktuel bonus</div>';
           if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event ændrer varigheden for almindelig Incense.</div><p><button class="btn" type="button" data-event-url="'+E(bonus.article_url)+'" style="width:100%;cursor:pointer">Åbn eventet ↗</button></p></div>';
           else h+='<div class=note>Ingen aktiv bonus til almindelig Incense registreret lige nu.</div>';
-          h+='<div class=section>Sådan virker det</div><div class=card><div class=small>• Normal Incense: 60 minutter.<br>• Særlige events kan gøre den længere.<br>• Flere Incense kan stables op til 24 timer.<br>• Daily Adventure Incense har sin egen varighed og påvirker ikke denne.</div></div>';
-          h+='<div class=section>Vigtigt</div><div class=card><div class=small>En eventbonus vises kun her, hvis eventdataene specifikt beskriver en ændring af den almindelige Incense-varighed. GO Pass-bonusser til Daily Adventure Incense vises ikke som normal Incense-bonus.</div></div>';
-          h+='<div class=section>Officiel info</div><div class=card><button class="btn" type="button" data-external-url="https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en" style="width:100%;cursor:pointer">Åbn officiel Incense-info ↗</button></div>';
+          h+='<div class=section>2. Sådan virker det</div><div class=card><div class=small>• Normal Incense varer 60 minutter.<br>• Særlige events kan ændre varigheden.<br>• Varigheden gælder almindelig Incense og er adskilt fra Daily Adventure Incense.</div></div>';
+          h+='<div class=section>3. Officiel info</div><div class=card><div class=small>Niantics officielle hjælpecenter beskriver almindelig Incense som normalt 60 minutter og bemærker, at særlige events kan forlænge varigheden.</div><p><button class="btn" type="button" data-external-url="https://niantic.helpshift.com/hc/en/6-pokemon-go/faq/2480-what-are-incense/?hl=en" style="width:100%;cursor:pointer">Åbn officiel Incense-info ↗</button></p></div>';
+          h+='<div class=section>4. Stacking – op til 24 timer</div><div class=card><div class=small>Du kan aktivere flere almindelige Incense for at lægge varigheden sammen. Den samlede varighed kan stables op til 24 timer. Det betyder, at du kan bruge flere Incense efter hinanden uden at skulle starte en ny hvert 60. minut.</div></div>';
+          h+='<div class=section>5. Daily Adventure Incense</div><div class=card><div class=small>Daily Adventure Incense er en separat Incense-type. Den varer 15 minutter og tiltrækker vilde Pokémon, mens du bevæger dig i den virkelige verden. Den skal derfor ikke blandes sammen med normal Incense eller dens 60-minutters varighed.</div></div>';
+          h+='<div class=section>6. GO Pass-events</div><div class=card><div class=small>Et GO Pass-event vises ikke som normal Incense-bonus, medmindre eventdataene specifikt dokumenterer, at eventet faktisk ændrer varigheden for almindelig Incense. Bonusser, der kun gælder Daily Adventure Incense, holdes uden for normal Incense.</div></div>';
           open(h)
           }
           """
@@ -74,5 +78,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Restore full regular Incense duration information'
+          git diff --cached --quiet || git commit -m 'Clarify regular Incense duration and bonuses'
           git push
