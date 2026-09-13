@@ -73,7 +73,7 @@ async function showIncenseSpawns(){
       let add=v=>{if(v==null)return;if(Array.isArray(v)){v.forEach(add);return}if(typeof v==='object'){add(v.name??v.type??v.value??v.typeName);return}let z=typeof v==='number'?TYPE_NAMES[v]:String(v).trim();if(z&&!ts.includes(z))ts.push(z)};
       add(q?.types);add(q?.type);add(q?.type1);add(q?.type2);add(q?.data?.types);add(q?.data?.type);add(q?.data?.type1);add(q?.data?.type2);add(p?.types);add(p?.type);add(p?.type1);add(p?.type2);
       $('x').onclick=()=>showIncenseSpawns();
-      open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${E(ts.join(' · ')||'Ikke oplyst')}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div>`);
+      event_url=e.article_url||e.url||''; open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${E(ts.join(' · ')||'Ikke oplyst')}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div><div class=section>Hvilket event får den til at spawne?</div><div class=card><b>${E(e.title)}</b>${event_url?`<p><a class="btn" href="${E(event_url)}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none">Åbn eventet ↗</a></p>`:'<div class=small style="margin-top:6px">Event-link ikke oplyst.</div>'}</div>`);
     });
   }catch(err){open('<h2>Incense</h2><div class=note>Kunne ikke hente Incense-spawns. Tryk ↻ og prøv igen.</div>')}
 }
