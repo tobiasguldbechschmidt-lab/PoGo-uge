@@ -18,6 +18,7 @@ jobs:
           import re
           p=Path('index.html')
           s=p.read_text()
+          s=re.sub(r'<script id="regular-incense-duration-inject">[\s\S]*?</script>', '', s, count=1)
           pat=r'function showIncenseDuration\(\)\{[\s\S]*?\}\s*(?=function |document\.addEventListener|</script>)'
           repl="""function showIncenseDuration(){
           let now=N(),a=C.ev||[],active=a.filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));
@@ -28,7 +29,7 @@ jobs:
             return /(?:incense activated during|incense lasts|incense will last|incense duration is|incense duration increased|incense duration increase|incense.*(?:2 hours|3 hours|longer|increased))/.test(txt);
           });
           let h='<h2>Incense · Varighed</h2><div class=section>Normal varighed</div><div class=card><b>60 minutter</b><div class=small>Almindelig Incense varer normalt 60 minutter.</div></div><div class=section>Aktuel bonus</div>';
-          if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event ændrer varigheden for almindelig Incense.</div><p><button class=\"btn\" type=\"button\" data-event-url=\"'+E(bonus.article_url)+'\" style=\"width:100%;cursor:pointer\">Åbn eventet ↗</button></p></div>';
+          if(bonus)h+='<div class=card><b>'+E(bonus.title)+'</b><div class=small>Dette event ændrer varigheden for almindelig Incense.</div><p><button class="btn" type="button" data-event-url="'+E(bonus.article_url)+'" style="width:100%;cursor:pointer">Åbn eventet ↗</button></p></div>';
           else h+='<div class=note>Ingen aktiv bonus til almindelig Incense lige nu.</div>';
           h+='<div class=section>Sådan virker det</div><div class=card><div class=small>Almindelig Incense varer normalt 60 minutter. Et event vises kun her, hvis eventdataene specifikt siger, at almindelig Incense varer længere. Daily Adventure Incense-bonusser bruges ikke.</div></div>';
           open(h)
@@ -45,6 +46,7 @@ jobs:
           if not scripts: raise SystemExit('No scripts found')
           for i,js in enumerate(scripts):
               f=f'/tmp/pogo-{i}.js'; open(f,'w').write(js); subprocess.run(['node','--check',f],check=True)
+          if 'regular-incense-duration-inject' in s: raise SystemExit('duplicate injector remains')
           print('Validated',len(scripts),'script blocks')
           PY
       - name: Commit patch
@@ -52,5 +54,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
-          git diff --cached --quiet || git commit -m 'Only show verified regular Incense duration bonuses'
+          git diff --cached --quiet || git commit -m 'Remove duplicate regular Incense duration injector'
           git push
