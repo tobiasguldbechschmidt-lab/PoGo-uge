@@ -27,14 +27,27 @@ jobs:
       - name: Validate generated Lure markup
         run: |
           grep -q 'data-lure-p=' index.html
-          grep -q 'Lure Module</h2>' index.html
+          grep -q 'Lure Module · Spawns' index.html
           grep -q 'showLurePokemonTypes' index.html
           echo 'Lure spawn markup verified'
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          s=Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',s,re.I)
+          for i,js in enumerate(blocks,1):
+              f=Path(tempfile.gettempdir())/f'lure-page-{i}.js'
+              f.write_text(js,encoding='utf-8')
+              subprocess.run(['node','--check',str(f)],check=True)
+          print('All JavaScript blocks valid')
+          PY
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if git diff --quiet -- index.html; then echo 'No changes'; exit 0; fi
           git add index.html
-          git commit -m 'Match Lure Spawns to Incense layout'
+          git commit -m 'Fix Lure Module spawns display'
           git push
