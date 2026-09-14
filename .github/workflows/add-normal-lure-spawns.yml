@@ -30,7 +30,7 @@ jobs:
               code=r'''function showNormalLureSpawns(){
           let now=N(),active=(C.ev||[]).filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));
           let lureEvents=active.filter(e=>JSON.stringify(e).toLowerCase().includes('lure module'));
-          let names=['Bulbasaur','Charmander','Squirtle','Pikachu','Eevee','Rattata','Pidgey','Zubat','Spearow','Magikarp'];
+          let names=['Bulbasaur','Charmander','Squirtle','Pikachu','Eevee','Rattata','Pidgey','Zubat','Spearow','Magikarp','Abra','Machop','Cubone','Snorlax','Passimian'];
           let found=[];
           for(let e of lureEvents){
             let txt=JSON.stringify(e).toLowerCase();
@@ -60,11 +60,6 @@ jobs:
               pos=s.find(fn)
               if pos<0: raise SystemExit('lure function marker not found')
               s=s[:pos]+listener+s[pos:]
-          # Load event data before opening the lure popup when needed.
-          old="if(p==='wild')wild();"
-          new="if(p==='wild')wild().then(()=>{}).catch(()=>{});"
-          if old in s:
-              s=s.replace(old,new,1)
           scripts=re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>',s,re.S|re.I)
           for js in scripts:
               with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False) as f:
@@ -77,7 +72,9 @@ jobs:
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
-          git config user.email '41898282+users.noreply.github.com'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet || git commit -m 'Add normal Lure Module spawns'
-          git push
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
