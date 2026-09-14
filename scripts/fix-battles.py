@@ -1,13 +1,17 @@
 from pathlib import Path
+import re
 
 p=Path('index.html')
 s=p.read_text(encoding='utf-8')
-start=s.find('function battleQ')
-end=s.find('async function ev',start)
-if start<0 or end<0:
-    raise SystemExit('battle anchors not found')
-replacement=r'''function battleQ(e){let s=(e.title+' '+(e.category||'')+' '+(e.type||'')).toLowerCase();return /battle league|go battle league|league:|cup:/.test(s)}
-function battles(){
+start=s.find('function battles(){')
+if start<0:
+    raise SystemExit('battles function not found')
+end=s.find('\nfunction ',start+10)
+if end<0:
+    end=s.find('\nasync function ',start+10)
+if end<0:
+    raise SystemExit('end of battles function not found')
+new=r'''function battles(){
   let b=$('battles');
   let schedule=[
     [['Great League: Mega Edition','Ultra League: Mega Edition','Master League: Mega Edition'],'2026-09-08T20:00:00Z','2026-09-15T20:00:00Z'],
@@ -30,6 +34,6 @@ function battles(){
   b.innerHTML=h;up()
 }
 '''
-s=s[:start]+replacement+s[end:]
+s=s[:start]+new+s[end:]
 p.write_text(s,encoding='utf-8')
 print('Battle League schedule updated')
