@@ -39,3 +39,4 @@ for needle in ('data-p="research"', 'id="p-research"', 'Field Research Tasks', '
 
 p.write_text(s, encoding='utf-8')
 print('Field Research removed successfully')
+# Finalized: Field Research is intentionally excluded from the app.
