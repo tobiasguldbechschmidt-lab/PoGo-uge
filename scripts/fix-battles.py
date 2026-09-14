@@ -1,16 +1,11 @@
 from pathlib import Path
-import re
 
 p=Path('index.html')
 s=p.read_text(encoding='utf-8')
 start=s.find('function battles(){')
-if start<0:
-    raise SystemExit('battles function not found')
-end=s.find('\nfunction ',start+10)
-if end<0:
-    end=s.find('\nasync function ',start+10)
-if end<0:
-    raise SystemExit('end of battles function not found')
+end=s.find('show(',start)
+if start<0 or end<0:
+    raise SystemExit('battle function boundary not found')
 new=r'''function battles(){
   let b=$('battles');
   let schedule=[
