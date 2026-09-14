@@ -45,3 +45,5 @@ for i, block in enumerate(blocks, 1):
 for needle in ('data/maxbattles.json','ca. 1/20 (5 %)','Spillere'):
     if needle not in s2:
         raise SystemExit(f'Missing Dynamax validation marker: {needle}')
+
+# Workflow trigger marker: keep this patch script in the workflow path set.
