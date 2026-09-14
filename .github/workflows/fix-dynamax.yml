@@ -5,6 +5,7 @@ on:
     paths:
       - 'scripts/fix-dynamax.py'
       - 'scripts/update-dynamax-data.py'
+      - 'scripts/add-raid-dynamax-end-times.py'
       - '.github/workflows/fix-dynamax.yml'
   schedule:
     - cron: '*/15 * * * *'
@@ -37,11 +38,15 @@ jobs:
       - name: Apply Dynamax patch
         run: python3 scripts/fix-dynamax.py
 
+      - name: Add Raid and Dynamax end times
+        run: python3 scripts/add-raid-dynamax-end-times.py
+
       - name: Validate Dynamax
         run: |
           grep -q 'data/maxbattles.json' index.html
           grep -q 'ca. 1/20 (5 %)' index.html
           grep -q 'Spillere' index.html
+          grep -q 'Raid / Max Battle rotation end times' index.html
           python3 - <<'PY'
           import re, subprocess, pathlib
           s=pathlib.Path('index.html').read_text(encoding='utf-8')
@@ -60,6 +65,6 @@ jobs:
           if git diff --cached --quiet; then
             echo 'No changes to commit'
           else
-            git commit -m 'Refresh current Dynamax Max Battles'
+            git commit -m 'Refresh current Dynamax Max Battles and end times'
             git push
           fi
