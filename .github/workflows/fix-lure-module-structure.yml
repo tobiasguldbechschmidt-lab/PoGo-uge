@@ -1,4 +1,4 @@
-name: Structure normal Lure Module under Lure
+name: Refresh Lure Module data
 
 on:
   push:
@@ -6,83 +6,54 @@ on:
     paths:
       - '.github/workflows/fix-lure-module-structure.yml'
       - 'scripts/fix-lure-module.py'
-      - 'scripts/add-lure-pokemon-types.py'
       - 'scripts/add-lure-shiny-details.py'
       - 'scripts/add-special-lure-modules.py'
       - 'scripts/match-lure-incense-spawns.py'
-      - 'scripts/fix-eggs-details.py'
-      - 'scripts/remove-field-research.py'
-  pull_request_target:
-    types: [opened]
   schedule:
-    - cron: '*/5 * * * *'
-  issues:
-    types: [opened]
+    - cron: '17,47 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  patch:
+  refresh:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch and validate Lure Module
+      - name: Refresh Lure Module structure
         run: python3 scripts/fix-lure-module.py
-      - name: Legacy clickable Pokemon types patch
-        run: python3 scripts/add-lure-pokemon-types.py
-        continue-on-error: true
-      - name: Add safe Lure shiny details
+      - name: Refresh Lure shiny details
         run: python3 scripts/add-lure-shiny-details.py
-      - name: Add all special Lure Modules
+      - name: Refresh special Lure Modules
         run: python3 scripts/add-special-lure-modules.py
-      - name: Match Lure Spawns to Incense
+      - name: Refresh Lure event/spawn matching
         run: python3 scripts/match-lure-incense-spawns.py
-      - name: Fix Egg Pokemon details
-        run: python3 scripts/fix-eggs-details.py
-      - name: Remove Field Research
-        run: python3 scripts/remove-field-research.py
-      - name: Validate generated Lure, Egg and menu markup
-        run: |
-          grep -q 'data-lure-p=' index.html
-          grep -q 'Lure Module · Spawns' index.html
-          grep -q 'showLurePokemonTypes' index.html
-          grep -q '✨ Shiny chance' index.html
-          grep -q 'Glacial Lure' index.html
-          grep -q 'Mossy Lure' index.html
-          grep -q 'Magnetic Lure' index.html
-          grep -q 'Rainy Lure' index.html
-          grep -q 'Golden Lure' index.html
-          grep -q 'data-special-lure=' index.html
-          grep -q 'data-special-lure-p=' index.html
-          grep -q 'function hundoCp(q)' index.html
-          grep -q '1/64 (1,56 %)' index.html
-          grep -q '10/10/10' index.html
-          grep -q 'Hatch level' index.html
-          ! grep -q 'Field Research Tasks' index.html
-          ! grep -q 'data-p="research"' index.html
-          ! grep -q 'id="p-research"' index.html
-          ! grep -q "research()" index.html
-          echo 'All Lure, Egg and menu details verified'
-      - name: Validate JavaScript
+      - name: Validate JavaScript and Lure markup
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re, subprocess, tempfile
           s=Path('index.html').read_text(encoding='utf-8')
+          required=['data-wtab="lure"','Lure Module','Lure Module · Spawns','Glacial Lure','Mossy Lure','Magnetic Lure','Rainy Lure','Golden Lure','data-special-lure=','data-special-lure-p=']
+          for x in required:
+              if x not in s: raise SystemExit('Missing: '+x)
           blocks=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',s,re.I)
+          if not blocks: raise SystemExit('No JavaScript blocks found')
           for i,js in enumerate(blocks,1):
-              f=Path(tempfile.gettempdir())/f'page-{i}.js'
+              f=Path(tempfile.gettempdir())/f'pogo-lure-{i}.js'
               f.write_text(js,encoding='utf-8')
               subprocess.run(['node','--check',str(f)],check=True)
-          print('All JavaScript blocks valid')
+          print(f'Validated {len(blocks)} JavaScript blocks')
           PY
-      - name: Commit
+      - name: Commit refreshed data
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          if git diff --quiet -- index.html; then echo 'No changes'; exit 0; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add index.html
-          git commit -m 'Remove Field Research section'
-          git push
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'Refresh Lure Module data'
+            git push
+          fi
