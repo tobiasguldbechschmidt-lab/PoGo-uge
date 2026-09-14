@@ -5,10 +5,29 @@ import subprocess
 p=Path('index.html')
 s=p.read_text(encoding='utf-8')
 
-# Remove the old misplaced Lure Module implementation.
+# Remove the old misplaced listener exactly.
 s=re.sub(r"document\.addEventListener\('click',e=>\{let b=e\.target\.closest\('\[data-lure-spawns\]'\);if\(b\)\{e\.stopPropagation\(\);showNormalLureSpawns\(\)\}\}\);",'',s)
 s=re.sub(r"document\.addEventListener\('click',e=>\{let b=e\.target\.closest\('\[data-lure-event-url\]'\);if\(b\)\{e\.stopPropagation\(\);let u=b\.dataset\.lureEventUrl;if\(u\)window\.location\.assign\(u\)\}\}\);",'',s)
-s=re.sub(r"function showNormalLureSpawns\(\)\{[\s\S]*?\n\}",'',s,count=1)
+
+# Remove the old function with brace-aware parsing so no stray braces are left.
+def remove_function(src,name):
+    start=src.find('function '+name+'(){')
+    if start<0:
+        return src
+    brace=src.find('{',start)
+    depth=0
+    end=None
+    for i in range(brace,len(src)):
+        if src[i]=='{': depth+=1
+        elif src[i]=='}':
+            depth-=1
+            if depth==0:
+                end=i+1
+                break
+    if end is None:
+        raise SystemExit('Could not safely remove '+name)
+    return src[:start]+src[end:]
+s=remove_function(s,'showNormalLureSpawns')
 
 old="if(tab==='lure')b.querySelector('#wild-content').innerHTML=bonusCards(lure,'Lure Modules');"
 new="if(tab==='lure')b.querySelector('#wild-content').innerHTML=lureCards();"
