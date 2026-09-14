@@ -275,7 +275,29 @@ async function dynamax(){
     b.innerHTML=a.map(x=>{let n=x?.names?.English||x?.name||x?.pokemon?.names?.English||x?.pokemon?.name||'Dynamax Pokémon',im=img(x),tn=tierNum(x),ti=tierInfo[tn]||['Tier '+(tn||'?'),'Afhænger af boss'],ts=types(x),sh=shiny(x),cp=x?.cpRange||[];return `<div class="card"><div class="row"><div class="img">${im?`<img src="${E(im)}" alt="${E(n)}">`:''}</div><div class="grow"><div class="name">${E(n)}</div><div class="small">${E(ti[0])}</div></div></div><div class="stats"><div class="stat"><b>${E(ts.length?ts.join(' / '):'Ukendt')}</b><span>Type</span></div><div class="stat"><b>${sh?'ca. 1/20 (5 %)':'Ikke mulig'}</b><span>Shiny chance${sh?' · est.':''}</span></div><div class="stat"><b>${E(ti[1])}</b><span>Spillere</span></div></div>${cp.length>=2?`<div class=small style="margin-top:8px">CP ved fangst: ${E(cp[0])}–${E(cp[1])}</div>`:''}${sh?'<div class=small style="margin-top:6px">Shiny-raten for Max Battles er et community-estimat og ikke officielt offentliggjort.</div>':''}</div>`}).join('');up();
   }catch(e){b.innerHTML='<div class=note>Kunne ikke hente Max Battle-data. Prøv ↻ igen.</div>';console.error(e)}
 }
-function battleQ(e){let s=(e.title+' '+(e.category||'')+' '+(e.type||'')).toLowerCase();return /battle league|go battle league|league:|cup:/.test(s)}function battles(){ev().then(a=>{let n=N(),all=a.filter(battleQ).sort((x,y)=>(x.start||0)-(y.start||0)),cur=all.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n)),fu=all.filter(e=>e.start&&e.start>n),h=cur.length?'<div class=section>Spiller lige nu</div>':'';h+=cur.map(e=>`<div class=card><div class=name>🟢 ${E(e.title)}</div><div class=small>${e.start?e.start.toLocaleString('da-DK'):''}${e.end?' → '+e.end.toLocaleString('da-DK'):''}</div></div>`).join('');let end=cur.map(e=>e.end).filter(Boolean).sort((a,b)=>a-b)[0];h+=`<div class=section>Slutter</div><div class=card>${end?end.toLocaleString('da-DK'):'Ikke oplyst'}</div>`;h+=fu.length?'<div class=section>Næste rotationer</div>'+fu.slice(0,7).map(e=>`<div class=card><div class=name>${E(e.title)}</div><div class=small>${e.start.toLocaleString('da-DK')}${e.end?' → '+e.end.toLocaleString('da-DK'):''}</div></div>`).join(''):'';$('battles').innerHTML=h||'<div class=note>Ingen Battle League-data fundet.</div>';up()}).catch(()=>$('battles').innerHTML='<div class=note>Kunne ikke hente Battle League-data.</div>')}show('home');</script><script>
+function battleQ(e){let s=(e.title+' '+(e.category||'')+' '+(e.type||'')).toLowerCase();return /battle league|go battle league|league:|cup:/.test(s)}function battles(){
+  let b=$('battles');
+  ev().then(a=>{
+    let n=N();
+    let all=a.filter(battleQ).filter(e=>e.start||e.end).sort((x,y)=>(x.start||x.end||0)-(y.start||y.end||0));
+    let current=all.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n));
+    let upcoming=all.filter(e=>e.start&&e.start>n);
+    let nextStart=upcoming.length?upcoming[0].start:null;
+    let next=nextStart?upcoming.filter(e=>e.start.getTime()===nextStart.getTime()):[];
+    let fmt=d=>d?d.toLocaleString('da-DK',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    let range=e=>`${e.start?fmt(e.start):'Start ukendt'}${e.end?' → '+fmt(e.end):''}`;
+    let card=e=>`<div class="card"><div class="name">${E(e.title)}</div><div class="small" style="margin-top:5px">${range(e)}</div>${e.end&&e.end>=n?`<div class="small" style="margin-top:5px">🟢 I gang nu</div>`:''}</div>`;
+    let h='<div class=note>GO Battle League-rotationerne hentes fra den aktuelle event-feed og følger de offentliggjorte start- og sluttider.</div>';
+    h+='<div class=section>🟢 I gang lige nu</div>';
+    h+=current.length?current.map(card).join(''):'<div class=note>Ingen GO Battle League-rotation registreret som aktiv lige nu.</div>';
+    h+='<div class=section>⏭️ Næste rotation</div>';
+    h+=next.length?next.map(card).join(''):'<div class=note>Ingen kommende rotation fundet.</div>';
+    let later=upcoming.filter(e=>!nextStart||e.start.getTime()>nextStart.getTime()).slice(0,6);
+    if(later.length){h+='<div class=section>Kommende rotationer</div>'+later.map(card).join('')}
+    b.innerHTML=h;up()
+  }).catch(()=>b.innerHTML='<div class=note>Kunne ikke hente Battle League-data. Prøv ↻ igen.</div>')
+}
+show('home');</script><script>
 /* OFFICIAL_LINK_CLICK_FIX */
 document.addEventListener('click',function(e){
   const a=e.target.closest('a[data-official-url],a[href^="https://pokemongo.com/"],a[href^="https://niantic.helpshift.com/"]');
