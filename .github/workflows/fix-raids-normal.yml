@@ -29,6 +29,33 @@ jobs:
           else:
               p.write_text(s2,encoding='utf-8')
           PY
+      - name: Add proper Lure Module under Lure
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="if(tab==='lure')b.querySelector('#wild-content').innerHTML=bonusCards(lure,'Lure Modules');"
+          new="if(tab==='lure')b.querySelector('#wild-content').innerHTML=lureCards();"
+          if old not in s:
+              raise SystemExit('Lure tab renderer marker not found')
+          s=s.replace(old,new,1)
+          marker='function dailyImg(id){'
+          if marker not in s:
+              raise SystemExit('dailyImg marker not found')
+          code=r'''function lureCards(){return '<div class=section>Lure</div><button class="card click" data-normal-lure="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">🌸</span><div class=grow><div class=name>Lure Module</div><div class=small>Spawns</div></div>›</div></button>'}
+async function showNormalLureSpawns(){try{let a=await ev(),n=N(),matches=[];a.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n)).forEach(e=>{let d=e.details||{},vals=[];Object.keys(d).forEach(k=>{if(/lure/i.test(k)&&Array.isArray(d[k]))vals.push(...d[k])});if(!vals.length&&/lure module/i.test(JSON.stringify(e))){let sp=d.spawns||e.spawns||[];if(Array.isArray(sp))vals=sp}vals.forEach(v=>{let name=typeof v==='string'?v:String(v?.name||v?.pokemon||'').trim();if(!name)return;let title=e.title||'Event',url=e.article_url||e.url||'',f=matches.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!f){f={name,events:[]};matches.push(f)}if(!f.events.some(x=>x.title===title))f.events.push({title,url})})});let h='<h2>🌸 Lure Module · Spawns</h2><div class=small>Normal Lure Module · normalt 30 minutter</div><div class=section>Sådan virker det</div><div class=card><div class=small>Et almindeligt Lure Module har ikke en fast permanent Pokémon-liste. Det øger vilde spawns ved et PokéStop, og Pokémon-poolen følger den aktuelle vilde spawn-pool og aktive events.</div></div>';if(matches.length){h+='<div class=section>Aktuelle event-spawns</div>'+matches.map(x=>'<div class=card><div class=name>'+E(x.name)+'</div>'+x.events.map(v=>'<div class=small style="margin-top:5px">'+E(v.title)+'</div>'+(v.url?'<button class="btn" type="button" data-lure-event-url="'+E(v.url)+'" style="width:100%;margin-top:7px;cursor:pointer">Åbn eventet ↗</button>':'<div class=small style="margin-top:5px">Event-link ikke oplyst.</div>')).join('')+'</div>').join('')}else{h+='<div class=section>Aktuelle spawns</div><div class=note>Der er ingen registrerede aktive events, som ændrer Normal Lure Module-spawns lige nu.</div>'}h+='<div class=section>Bemærkning</div><div class=card><div class=small>Spawns kan ændre sig med sæsoner og events.</div></div>';open(h)}catch(e){open('<h2>🌸 Lure Module · Spawns</h2><div class=note>Kunne ikke hente Lure Module-data. Tryk ↻ igen.</div>')}}'''
+          s=s.replace(marker,code+marker,1)
+          listener="document.addEventListener('click',e=>{let b=e.target.closest('[data-normal-lure]');if(b){e.stopPropagation();showNormalLureSpawns()}});document.addEventListener('click',e=>{let b=e.target.closest('[data-lure-event-url]');if(b){e.stopPropagation();let u=b.dataset.lureEventUrl;if(u)window.location.assign(u)}});"
+          at=s.find("document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]')")
+          if at<0: raise SystemExit('listener marker not found')
+          s=s[:at]+listener+s[at:]
+          # Remove duplicate old function/listeners if they survived from previous patch.
+          s=re.sub(r"document\.addEventListener\('click',e=>\{let b=e\.target\.closest\('\[data-lure-spawns\]'\);if\(b\)\{e\.stopPropagation\(\);showNormalLureSpawns\(\)\}\}\);",'',s)
+          s=re.sub(r"function showNormalLureSpawns\(\)\{[\s\S]*?\n\}",lambda m:m.group(0),s,count=1)
+          p.write_text(s,encoding='utf-8')
+          PY
       - name: Validate JavaScript and required menu
         run: |
           python3 - <<'PY'
@@ -40,16 +67,15 @@ jobs:
               f=tempfile.NamedTemporaryFile('w',suffix='.js',delete=False)
               f.write(js); f.close()
               subprocess.run(['node','--check',f.name],check=True)
-          assert 'Event-spawns' in s
-          assert 'Incense' in s
-          assert 'Lure' in s
-          assert 'data-lure-spawns="1"' not in s
+          for x in ['Event-spawns','Incense','Lure','data-wtab="lure"','data-normal-lure="1"','Lure Module','showNormalLureSpawns','Åbn eventet ↗']:
+              assert x in s, 'Missing '+x
+          assert 'data-lure-spawns="1"' not in s, 'Old misplaced Lure Module card remains'
           PY
       - name: Commit
         run: |
           if git diff --quiet; then echo "No changes"; exit 0; fi
           git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git config user.email 41898282+users.noreply.github.com
           git add index.html .github/workflows/fix-raids-normal.yml
-          git commit -m "Remove misplaced Lure Module card"
+          git commit -m "Add normal Lure Module under Lure"
           git push
