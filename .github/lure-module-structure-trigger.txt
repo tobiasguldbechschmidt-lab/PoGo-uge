@@ -1,1 +1,2 @@
 Structure normal Lure Module under Lure.
+Refresh duration and spawn details.
