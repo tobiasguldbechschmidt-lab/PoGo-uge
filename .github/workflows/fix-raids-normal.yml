@@ -12,60 +12,24 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Patch raid renderer
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('index.html')
-          s=p.read_text()
-          start=s.index('async function raids(){')
-          end=s.index('async function wild()', start)
-          new=r'''async function raids(){let b=$('raids');try{let raw=await get(U.raids,60000),all=[];Object.entries(raw||{}).forEach(([group,ls])=>{if(Array.isArray(ls))ls.forEach(p=>all.push({...p,group}))});let isShadow=p=>/^shadow\b/i.test(String(p.name||''))||/shadow/i.test(String(p.group||''));let isMega=p=>/mega/i.test(String(p.name||''))||/mega/i.test(String(p.group||''));let normal=all.filter(p=>!isShadow(p)&&!isMega(p)),mega=all.filter(p=>!isShadow(p)&&isMega(p)),shadow=all.filter(isShadow);let iconBase='https://raw.githubusercontent.com/PokeMiners/pogo_assets/master/Images/Pokemon%20-%20256x256/Addressable%20Assets/';let iconMap={'alolan rattata':'pm19.fALOLA.icon.png','dunsparce':'pm206.icon.png','scraggy':'pm559.icon.png','fidough':'pm926.icon.png','alolan dugtrio':'pm51.fALOLA.icon.png','lapras':'pm131.icon.png','falinks':'pm870.icon.png','zacian (hero of many battles)':'pm888.fHERO.icon.png','zacian (hero)':'pm888.fHERO.icon.png'};if(!normal.length){normal=[{name:'Alolan Rattata',tier:1,group:'1-Star Raids',types:['Dark','Normal']},{name:'Dunsparce',tier:1,group:'1-Star Raids',types:['Normal']},{name:'Scraggy',tier:1,group:'1-Star Raids',types:['Dark','Fighting']},{name:'Fidough',tier:1,group:'1-Star Raids',types:['Fairy']},{name:'Alolan Dugtrio',tier:3,group:'3-Star Raids',types:['Ground','Steel']},{name:'Lapras',tier:3,group:'3-Star Raids',types:['Water','Ice']},{name:'Falinks',tier:3,group:'3-Star Raids',types:['Fighting']},{name:'Zacian (Hero of Many Battles)',tier:5,group:'5-Star Raids',types:['Fairy']}];}let typeMap={Grass:'Græs',Fire:'Ild',Water:'Vand',Electric:'Elektrisk',Ice:'Is',Fighting:'Kamp',Poison:'Gift',Ground:'Jord',Flying:'Flyvende',Psychic:'Psykisk',Bug:'Bug',Rock:'Sten',Ghost:'Spøgelse',Dragon:'Drage',Dark:'Mørke',Steel:'Stål',Fairy:'Fe',Normal:'Normal'};function shiny(p,kind){let n=String(p.name||'').toLowerCase();let t=String(p.tier??'');if(kind==='mega')return {rate:'1/64',pct:'1,56 %',note:'Mega Raid'};if(kind==='shadow'&&(/legendary|zapdos|moltres|articuno|mewtwo|lugia|ho-oh|regirock|regice|registeel|latias|latios|kyogre|groudon|rayquaza|dialga|palkia|heatran|giratina|cobalion|terrakion|virizion|reshiram|zekrom|landorus|tornadus|thundurus|xerneas|yveltal|zacian|zamazenta|regieleki|regidrago|nihilego|buzzwole|pheromosa|xurkitree|celesteela|kartana|guzzlord|necrozma|solgaleo|lunala|eternatus|zacian|zamazenta/i.test(n)||t==='5'))return {rate:'1/20',pct:'5 %',note:'Shadow Legendary'};if(kind==='normal'&&t==='5')return {rate:'1/20',pct:'5 %',note:'Legendary Raid'};return {rate:'1/64',pct:'1,56 %',note:'Shiny-eligible Raid'};}function imgFor(p){if(p.asset_url)return p.asset_url;let n=String(p.name||'').toLowerCase();return iconMap[n]?iconBase+iconMap[n]:''}function cards(list,kind){if(!list.length)return '<div class=note>Ingen aktive raidbosser fundet.</div>';let groups={};list.forEach(p=>{let g=p.group||'Raids';(groups[g]??=[]).push(p)});return Object.entries(groups).map(([g,ls])=>'<div class=section>'+E(g)+'</div>'+ls.map(p=>{let t=Array.isArray(p.types)?p.types.map(x=>typeMap[x]||x):[typeMap[p.type]||p.type||'Normal'];let im=imgFor(p),sh=shiny(p,kind);return '<div class="card click" data-raid="'+E(JSON.stringify({...p,_kind:kind}))+'"><div class=row><div class=img>'+(im?'<img src="'+E(im)+'" alt="'+E(p.name)+'" loading="lazy">':'⚔️')+'</div><div class=grow><div class=name>'+E(p.name||'Raid')+'</div><div class=small>'+E(t.join(' · '))+' · Tier '+E(String(p.tier??''))+'</div><div class=small>✨ Shiny: '+sh.rate+' ('+sh.pct+')</div></div>›</div></div>'}).join('')).join('')}function render(tab){let list=tab==='mega'?mega:tab==='normal'?normal:shadow;b.innerHTML='<div class="raid-tabs"><button class="raid-tab '+(tab==='normal'?'active':'')+'" data-raid-tab="normal">Normale</button><button class="raid-tab '+(tab==='mega'?'active':'')+'" data-raid-tab="mega">Mega</button><button class="raid-tab '+(tab==='shadow'?'active':'')+'" data-raid-tab="shadow">Shadow</button></div>'+cards(list,tab);document.querySelectorAll('[data-raid-tab]').forEach(x=>x.onclick=()=>render(x.dataset.raidTab));document.querySelectorAll('[data-raid]').forEach(x=>x.onclick=()=>{let p=JSON.parse(x.dataset.raid),kind=p._kind||'normal';let t=Array.isArray(p.types)?p.types.map(v=>typeMap[v]||v):[typeMap[p.type]||p.type||'Normal'];let sh=shiny(p,kind);open('<h2>'+E(p.name||'Raid')+'</h2><div class=section>Type</div><div class=card>'+E(t.join(' · '))+'</div><div class=section>Tier</div><div class=card>'+E(String(p.tier??'Ikke oplyst'))+'</div><div class=section>Shiny-chance</div><div class=card>✨ <b>'+E(sh.rate)+'</b> · '+E(sh.pct)+'<div class=small>'+E(sh.note)+'. Odds er estimerede spillerdata og kan ændres ved særlige events.</div></div>')});}render('normal');up()}'''
-          s=s[:start]+new+'async function wild()'+s[end+len('async function wild()'):]
-          p.write_text(s)
-          PY
-      - name: Add normal Lure Module spawns
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import re, subprocess, tempfile
-          p=Path('index.html'); s=p.read_text(encoding='utf-8')
-          if 'data-lure-spawns' not in s:
-              marker='<section class="page" id="p-wild">'; pos=s.find(marker)
-              if pos<0: raise SystemExit('p-wild section not found')
-              hero=s.find('<div class="hero">',pos); hero_end=s.find('</div>',hero)
-              if hero<0 or hero_end<0: raise SystemExit('wild hero not found')
-              insert='<div class="card click" data-lure-spawns="1"><div class="row"><span style="font-size:24px">🌸</span><div class="grow"><div class="name">Lure Module</div><div class="small">Spawns ved en PokéStop med en normal Lure Module.</div></div><span>›</span></div></div>'
-              s=s[:hero_end+6]+insert+s[hero_end+6:]
-          if 'function showNormalLureSpawns()' not in s:
-              code=r'''function showNormalLureSpawns(){let now=N(),active=(C.ev||[]).filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));let lureEvents=active.filter(e=>JSON.stringify(e).toLowerCase().includes('lure module'));let names=['Bulbasaur','Charmander','Squirtle','Pikachu','Eevee','Rattata','Pidgey','Zubat','Spearow','Magikarp','Abra','Machop','Cubone','Snorlax','Passimian'];let found=[];for(let e of lureEvents){let txt=JSON.stringify(e).toLowerCase();let hits=names.filter(n=>txt.includes(n.toLowerCase()));if(hits.length)found.push({e,n:hits})}let h='<h2>🌸 Lure Module · Spawns</h2><div class=small>En normal Lure Module varer normalt 30 minutter og øger antallet af vilde Pokémon omkring PokéStoppen.</div><div class=section>Aktuelle spawns</div>';if(found.length){let all=[...new Set(found.flatMap(x=>x.n))];h+=all.map(n=>'<div class="card"><div class="name">'+E(n)+'</div></div>').join('');h+='<div class=section>Event</div>';h+=found.map(x=>{let u=x.e.article_url||x.e.url||'';return '<div class="card"><div class="name">'+E(x.e.title||'Aktuelt event')+'</div><div class="small">Denne eventændring påvirker Normal Lure Module-spawns.</div>'+(u?'<button class="btn" type="button" data-lure-event-url="'+E(u)+'" style="display:block;width:100%;margin-top:8px;cursor:pointer">Åbn eventet ↗</button>':'')+'</div>'}).join('')}else{h+='<div class="note">Der er ikke registreret et aktivt event, som ændrer Normal Lure Module-spawns lige nu.</div><div class="note">En normal Lure Module har ikke en fast, permanent Pokémon-liste; den trækker fra den aktuelle vilde spawn-pool. Eventer kan midlertidigt ændre, hvilke Pokémon der tiltrækkes.</div>'}h+='<div class=section>Sådan virker den</div><div class=small>Alle spillere i nærheden kan se og fange Pokémon, der tiltrækkes til PokéStoppen.</div>';open(h)}'''
-              marker='function showIncenseDuration(){'; pos=s.find(marker)
-              if pos<0: raise SystemExit('showIncenseDuration marker not found')
-              s=s[:pos]+code+s[pos:]
-          if '[data-lure-spawns]' not in s:
-              marker='function showNormalLureSpawns(){'; pos=s.find(marker)
-              listener="document.addEventListener('click',e=>{let b=e.target.closest('[data-lure-spawns]');if(b){e.stopPropagation();showNormalLureSpawns()}});document.addEventListener('click',e=>{let b=e.target.closest('[data-lure-event-url]');if(b){e.stopPropagation();let u=b.dataset.lureEventUrl;if(u)window.location.assign(u)}});"
-              s=s[:pos]+listener+s[pos:]
-          scripts=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',s,re.I)
-          for js in scripts:
-              f=tempfile.NamedTemporaryFile('w',suffix='.js',delete=False);f.write(js);f.close();subprocess.run(['node','--check',f.name],check=True)
-          for required in ['data-lure-spawns','showNormalLureSpawns','data-lure-event-url','Lure Module · Spawns']:
-              if required not in s: raise SystemExit('Missing '+required)
-          p.write_text(s,encoding='utf-8')
-          PY
       - name: Remove misplaced Lure Module card
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
-          p=Path('index.html'); s=p.read_text(encoding='utf-8')
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
           pattern=r'<div class="card click" data-lure-spawns="1"><div class="row"><span style="font-size:24px">🌸</span><div class="grow"><div class="name">Lure Module</div><div class="small">Spawns ved en PokéStop med en normal Lure Module\.</div></div><span>›</span></div></div>'
           s2,n=re.subn(pattern,'',s,count=1)
-          if n==0 and 'data-lure-spawns="1"' in s:
-              raise SystemExit('Misplaced Lure Module card could not be removed safely')
-          p.write_text(s2,encoding='utf-8')
+          if n==0:
+              if 'data-lure-spawns="1"' not in s:
+                  print('Misplaced Lure Module card already absent')
+              else:
+                  raise SystemExit('Misplaced Lure Module card could not be removed safely')
+          else:
+              p.write_text(s2,encoding='utf-8')
           PY
-      - name: Validate JavaScript
+      - name: Validate JavaScript and required menu
         run: |
           python3 - <<'PY'
           import re, subprocess, tempfile
@@ -73,11 +37,14 @@ jobs:
           blocks=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',s,re.I)
           assert blocks, 'No script blocks found'
           for js in blocks:
-              f=tempfile.NamedTemporaryFile('w',suffix='.js',delete=False);f.write(js);f.close();subprocess.run(['node','--check',f.name],check=True)
+              f=tempfile.NamedTemporaryFile('w',suffix='.js',delete=False)
+              f.write(js); f.close()
+              subprocess.run(['node','--check',f.name],check=True)
+          assert 'Event-spawns' in s
+          assert 'Incense' in s
+          assert 'Lure' in s
+          assert 'data-lure-spawns="1"' not in s
           PY
-          grep -q 'data-raid-tab="normal"' index.html
-          grep -q 'showNormalLureSpawns' index.html
-          test "$(grep -o 'data-lure-spawns="1"' index.html | wc -l)" -eq 0
       - name: Commit
         run: |
           if git diff --quiet; then echo "No changes"; exit 0; fi
