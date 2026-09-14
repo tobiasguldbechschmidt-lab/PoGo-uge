@@ -25,3 +25,4 @@ if 'data-p="research"' in s or 'id="p-research"' in s or 'Field Research Tasks' 
 
 p.write_text(s, encoding='utf-8')
 print('Field Research removed successfully')
+# Trigger the removal workflow after the workflow file is installed.
