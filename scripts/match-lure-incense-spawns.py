@@ -47,7 +47,17 @@ replacement = r'''async function showNormalLureSpawns(){
       if(name){p={...p,name:String(name)};if(!list.some(x=>x.name===p.name))list.push(p)}
     });
     if(!list.length){open(`<h2>🌸 Lure Module · Spawns</h2><div class=small>${E(e.title)}</div><div class=note>Eventet har ingen læsbare Pokémon-spawns endnu.</div>`);return}
-    open(`<h2>🌸 Lure Module · Spawns</h2><div class=small>${E(e.title)}</div><div class=section>Spawns</div>${list.map((p,i)=>`<div class="card click" data-lure-p="${i}"><div class=row><div class=img>${p.asset_url?`<img src="${E(p.asset_url)}" alt="${E(p.name)}" loading="lazy">`:lureImg(p.name)?`<img src="${E(lureImg(p.name))}" alt="${E(p.name)}" loading="lazy">`:'🌸'}</div><div class=grow><div class=name>${E(p.name)}</div><div class=small>${p.shiny_available===true?'✨ Shiny mulig':'Shiny ikke oplyst'}</div></div>›</div></div>`).join('')}`);
+    let shinyInfo=p=>{
+      let raw=p.shiny_rate??p.shinyRate??p.shiny_odds??p.shinyOdds??p.shiny_chance??p.shinyChance;
+      if(typeof raw==='string'&&raw.trim())return '✨ Shiny chance: '+E(raw);
+      if(typeof raw==='number'&&raw>0&&raw<1){let one=Math.round(1/raw),pct=(raw*100).toFixed(2).replace('.',',');return `✨ Shiny chance: 1/${one} (${pct} %)`}
+      if(typeof raw==='number'&&raw>=1){let pct=raw.toFixed(2).replace('.',',');return `✨ Shiny chance: ${pct} %`}
+      if(p.shiny_available===false||p.shiny===false)return '✨ Shiny ikke udgivet';
+      return '✨ Shiny chance: ca. 1/512 (0,2 %)';
+    };
+    let eventShiny=JSON.stringify(e).match(/(?:shiny[_ -]?(?:rate|chance|odds)|shiny)[^0-9]{0,40}(1\s*\/\s*\d+|\d+(?:[.,]\d+)?\s*%)/i);
+    let eventShinyText=eventShiny?eventShiny[1].replace(/\s+/g,''):'1/512 (0,2 %)';
+    open(`<h2>🌸 Lure Module · Spawns</h2><div class=small>${E(e.title)}</div><div class=section>Spawns</div>${list.map((p,i)=>`<div class="card click" data-lure-p="${i}"><div class=row><div class=img>${p.asset_url?`<img src="${E(p.asset_url)}" alt="${E(p.name)}" loading="lazy">`:lureImg(p.name)?`<img src="${E(lureImg(p.name))}" alt="${E(p.name)}" loading="lazy">`:'🌸'}</div><div class=grow><div class=name>${E(p.name)}</div><div class=small>${shinyInfo(p)}</div></div>›</div></div>`).join('')}<div class=note>Shiny-odds er normalt ca. ${E(eventShinyText)} for almindelige wild encounters. Hvis det aktive event angiver andre odds, skal eventets odds bruges.</div>`);
     document.querySelectorAll('[data-lure-p]').forEach(x=>x.onclick=()=>{let p=list[+x.dataset.lureP];showLurePokemonTypes(p.name,p.asset_url||lureImg(p.name))});
   }catch(e){open('<h2>🌸 Lure Module · Spawns</h2><div class=note>Kunne ikke hente Lure-spawns. Tryk ↻ igen.</div>')}
 }'''
@@ -58,7 +68,7 @@ for i, js in enumerate(blocks, 1):
     f = Path(f'/tmp/lure-incense-script-{i}.js')
     f.write_text(js, encoding='utf-8')
     subprocess.run(['node', '--check', str(f)], check=True)
-for needle in ['data-lure-p=', 'Lure Module · Spawns', 'showLurePokemonTypes']:
+for needle in ['data-lure-p=', 'Lure Module · Spawns', 'showLurePokemonTypes', 'Shiny chance: ca. 1/512']:
     if needle not in s:
         raise SystemExit('Missing ' + needle)
 p.write_text(s, encoding='utf-8')
