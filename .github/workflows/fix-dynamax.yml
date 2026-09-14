@@ -62,3 +62,5 @@ jobs:
             git commit -m 'Refresh current Dynamax Max Battles'
             git push
           fi
+
+      # Keep the workflow file itself in the trigger set so manual code repairs rerun it.
