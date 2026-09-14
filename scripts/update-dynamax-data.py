@@ -12,27 +12,44 @@ def fetch(url):
     with urllib.request.urlopen(req, timeout=30) as r:
         return r.read()
 
-html = fetch('https://www.snacknap.com/max-battles').decode('utf-8', errors='replace')
+# Jina gives GitHub Actions a stable text representation of Snack Nap's
+# client-rendered Max Battle page.
+text = fetch('https://r.jina.ai/https://www.snacknap.com/max-battles').decode('utf-8', errors='replace')
 types_raw = json.loads(fetch('https://pogoapi.net/api/v1/pokemon_types.json'))
 shiny_raw = json.loads(fetch('https://pogoapi.net/api/v1/shiny_pokemon.json'))
 
-# Snack Nap may wrap the visible name/CP text in nested spans, so parse each
-# Pokedex anchor first and strip markup from its inner HTML.
-anchor_re = re.compile(r'href=[\"\'](?:https?://www\.snacknap\.com)?/pokedex/pokemon/(\d+)[^>]*>(.*?)</a>', re.I | re.S)
-tier_re = re.compile(r'>\s*Tier\s*([1-6])\s*<', re.I)
-text_re = re.compile(r'(?:D-Max|G-Max)\s*(.*?)\s*CP\s*(\d+)\s*-\s*(\d+)', re.I | re.S)
-tag_re = re.compile(r'<[^>]+>')
-
-matches = []
-for m in anchor_re.finditer(html):
-    inner = tag_re.sub(' ', m.group(2))
-    inner = re.sub(r'\s+', ' ', inner).strip()
-    tm = text_re.search(inner)
+# Plain-text/Markdown form contains headings followed by D-Max rows.
+tier = None
+entries = []
+row_re = re.compile(r'D-(?:Max|G-Max)\s+(.+?)\s+CP\s+(\d+)\s*-\s*(\d+)\s*$', re.I)
+for raw in text.splitlines():
+    line = re.sub(r'\s+', ' ', raw).strip().strip('*').strip()
+    tm = re.match(r'(?:#+\s*)?Tier\s+([1-6])\b', line, re.I)
     if tm:
-        matches.append((m, tm, inner))
-if not matches:
+        tier = int(tm.group(1))
+        continue
+    if tier is None:
+        continue
+    rm = row_re.search(line)
+    if not rm:
+        continue
+    name = rm.group(1).strip()
+    # Remove a trailing Markdown link marker if the mirror includes one.
+    name = re.sub(r'\s*\[.*$', '', name).strip()
+    cp_min, cp_max = int(rm.group(2)), int(rm.group(3))
+    entries.append((tier, name, cp_min, cp_max))
+
+if not entries:
     raise SystemExit('Could not parse any current Max Battle Pokémon from Snack Nap')
 
+# Map names to Pokédex IDs from the current PogoAPI name dataset.
+names_raw = json.loads(fetch('https://pogoapi.net/api/v1/pokemon_names.json'))
+id_by_name = {}
+for key, row in names_raw.items() if isinstance(names_raw, dict) else []:
+    if isinstance(row, dict) and row.get('name'):
+        id_by_name[str(row['name']).strip().lower()] = int(row.get('id', key))
+
+# Current Pokémon typing.
 type_map = {}
 for row in types_raw if isinstance(types_raw, list) else types_raw.values():
     try:
@@ -47,17 +64,17 @@ def shiny_for(pid):
         return False
     return any(bool(row.get(k)) for k in ('found_wild','found_raid','found_egg','found_evolution','found_research','found_photobomb','alolan_shiny'))
 
-entries = []
-for anchor, tm, inner in matches:
-    tiers = list(tier_re.finditer(html[:anchor.start()]))
-    if not tiers:
+seen = set()
+by_tier = {f'tier_{i}': [] for i in range(1, 7)}
+for tier, name, cp_min, cp_max in entries:
+    pid = id_by_name.get(name.lower())
+    if not pid:
         continue
-    tier = int(tiers[-1].group(1))
-    pid = int(anchor.group(1))
-    name = re.sub(r'\s+', ' ', tm.group(1)).strip()
-    cp_min, cp_max = int(tm.group(2)), int(tm.group(3))
-    gmax = bool(re.search(r'G-Max|Gigantamax', inner, re.I))
-    entries.append({
+    key = (tier, pid)
+    if key in seen:
+        continue
+    seen.add(key)
+    by_tier[f'tier_{tier}'].append({
         'id': pid,
         'names': {'English': name},
         'level': tier,
@@ -65,17 +82,8 @@ for anchor, tm, inner in matches:
         'shiny': shiny_for(pid),
         'assets': {'image': f'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{pid}.png'},
         'cpRange': [cp_min, cp_max],
-        'form': 'GIGANTAMAX' if gmax or tier == 6 else 'DYNAMAX',
+        'form': 'DYNAMAX',
     })
-
-seen = set()
-by_tier = {f'tier_{i}': [] for i in range(1, 7)}
-for x in entries:
-    key = (x['level'], x['id'])
-    if key in seen:
-        continue
-    seen.add(key)
-    by_tier[f"tier_{x['level']}"].append(x)
 
 count = sum(len(v) for v in by_tier.values())
 if count == 0:
