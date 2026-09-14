@@ -1,0 +1,83 @@
+name: Add normal Lure Module spawns
+on:
+  push:
+    paths:
+      - '.github/workflows/add-normal-lure-spawns.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add normal Lure Module spawns UI
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'data-lure-spawns' not in s:
+              marker="<section class=\"page\" id=\"p-wild\">"
+              pos=s.find(marker)
+              if pos<0: raise SystemExit('p-wild section not found')
+              hero_end=s.find('</div>', s.find('<div class="hero">',pos))
+              if hero_end<0: raise SystemExit('wild hero not found')
+              insert="<div class=\"card click\" data-lure-spawns=\"1\"><div class=\"row\"><span style=\"font-size:24px\">🌸</span><div class=\"grow\"><div class=\"name\">Lure Module</div><div class=\"small\">Spawns ved en PokéStop med en normal Lure Module.</div></div><span>›</span></div></div>"
+              s=s[:hero_end+6]+insert+s[hero_end+6:]
+          fn="function showNormalLureSpawns(){"
+          if fn not in s:
+              code=r'''function showNormalLureSpawns(){
+          let now=N(),active=(C.ev||[]).filter(e=>(!e.start||e.start<=now)&&(!e.end||e.end>=now));
+          let lureEvents=active.filter(e=>JSON.stringify(e).toLowerCase().includes('lure module'));
+          let names=['Bulbasaur','Charmander','Squirtle','Pikachu','Eevee','Rattata','Pidgey','Zubat','Spearow','Magikarp'];
+          let found=[];
+          for(let e of lureEvents){
+            let txt=JSON.stringify(e).toLowerCase();
+            let hits=names.filter(n=>txt.includes(n.toLowerCase()));
+            if(hits.length) found.push({e,n:hits});
+          }
+          let h='<h2>🌸 Lure Module · Spawns</h2><div class=small>Normal Lure Module varer normalt 30 minutter og øger antallet af vilde Pokémon omkring PokéStoppen.</div>';
+          h+='<div class=section>Aktuelle spawns</div>';
+          if(found.length){
+            let all=[...new Set(found.flatMap(x=>x.n))];
+            h+=all.map(n=>`<div class="card"><div class="name">${E(n)}</div></div>`).join('');
+            h+='<div class=section>Event</div>';
+            h+=found.map(x=>{let u=x.e.article_url||x.e.url||'';return `<div class="card"><div class="name">${E(x.e.title||'Aktuelt event')}</div><div class="small">Denne eventændring påvirker Lure Module-spawns.</div>${u?`<button class="btn" type="button" data-lure-event-url="${E(u)}" style="display:block;width:100%;margin-top:8px;cursor:pointer">Åbn eventet ↗</button>`:''}</div>`}).join('');
+          }else{
+            h+='<div class="note">Der er ikke registreret et aktivt event, som ændrer Normal Lure Module-spawns lige nu.</div><div class="note">En normal Lure Module har ikke en fast, permanent Pokémon-liste; den trækker fra den aktuelle vilde spawn-pool. Eventer kan midlertidigt ændre, hvilke Pokémon der tiltrækkes.</div>';
+          }
+          h+='<div class=section>Sådan virker den</div><div class=small>Alle spillere i nærheden kan se og fange Pokémon, der tiltrækkes til PokéStoppen.</div>';
+          open(h);
+          }
+          '''
+              marker='function showIncenseDuration(){'
+              pos=s.find(marker)
+              if pos<0: raise SystemExit('showIncenseDuration marker not found')
+              s=s[:pos]+code+s[pos:]
+          listener="document.addEventListener('click',e=>{let b=e.target.closest('[data-lure-spawns]');if(b){e.stopPropagation();showNormalLureSpawns()}});document.addEventListener('click',e=>{let b=e.target.closest('[data-lure-event-url]');if(b){e.stopPropagation();let u=b.dataset.lureEventUrl;if(u)window.location.assign(u)}});"
+          if '[data-lure-spawns]' not in s[s.find('<script>'):]:
+              pos=s.find(fn)
+              if pos<0: raise SystemExit('lure function marker not found')
+              s=s[:pos]+listener+s[pos:]
+          # Load event data before opening the lure popup when needed.
+          old="if(p==='wild')wild();"
+          new="if(p==='wild')wild().then(()=>{}).catch(()=>{});"
+          if old in s:
+              s=s.replace(old,new,1)
+          scripts=re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>',s,re.S|re.I)
+          for js in scripts:
+              with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False) as f:
+                  f.write(js); name=f.name
+              subprocess.run(['node','--check',name],check=True)
+          for required in ['data-lure-spawns','showNormalLureSpawns','data-lure-event-url','Lure Module · Spawns']:
+              if required not in s: raise SystemExit('Missing '+required)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Add normal Lure Module spawns'
+          git push
