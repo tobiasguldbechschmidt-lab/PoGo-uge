@@ -4,6 +4,9 @@ from pathlib import Path
 root=Path(__file__).resolve().parents[1]
 p=root/'index.html'
 s=p.read_text(encoding='utf-8')
+if '/* Raid / Max Battle rotation end times */' in s:
+    print('End-time overlay already present')
+    raise SystemExit(0)
 marker='</script>'
 if s.count(marker)!=1:
     raise SystemExit(f'Expected one closing script tag, got {s.count(marker)}')
