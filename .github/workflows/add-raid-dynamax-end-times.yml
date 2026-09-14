@@ -1,6 +1,8 @@
 name: Add raid and Dynamax end times
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '*/1 * * * *'
   push:
     paths:
       - 'scripts/add-raid-dynamax-end-times.py'
