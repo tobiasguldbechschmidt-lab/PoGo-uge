@@ -21,7 +21,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Patch and validate Lure Module
         run: python3 scripts/fix-lure-module.py
-      - name: Add clickable Pokemon types and shiny details
+      - name: Legacy clickable Pokemon types patch
+        run: python3 scripts/add-lure-pokemon-types.py
+        continue-on-error: true
+      - name: Add safe Lure shiny details
         run: python3 scripts/add-lure-shiny-details.py
       - name: Match Lure Spawns to Incense
         run: python3 scripts/match-lure-incense-spawns.py
