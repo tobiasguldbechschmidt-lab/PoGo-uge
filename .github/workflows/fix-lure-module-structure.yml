@@ -11,6 +11,7 @@ on:
       - 'scripts/add-special-lure-modules.py'
       - 'scripts/match-lure-incense-spawns.py'
       - 'scripts/fix-eggs-details.py'
+      - 'scripts/remove-field-research.py'
   workflow_dispatch:
 
 permissions:
@@ -34,7 +35,9 @@ jobs:
         run: python3 scripts/match-lure-incense-spawns.py
       - name: Fix Egg Pokemon details
         run: python3 scripts/fix-eggs-details.py
-      - name: Validate generated Lure and Egg markup
+      - name: Remove Field Research
+        run: python3 scripts/remove-field-research.py
+      - name: Validate generated Lure, Egg and menu markup
         run: |
           grep -q 'data-lure-p=' index.html
           grep -q 'Lure Module · Spawns' index.html
@@ -51,7 +54,11 @@ jobs:
           grep -q '1/64 (1,56 %)' index.html
           grep -q '10/10/10' index.html
           grep -q 'Hatch level' index.html
-          echo 'All Lure and Egg details verified'
+          ! grep -q 'Field Research Tasks' index.html
+          ! grep -q 'data-p="research"' index.html
+          ! grep -q 'id="p-research"' index.html
+          ! grep -q "research()" index.html
+          echo 'All Lure, Egg and menu details verified'
       - name: Validate JavaScript
         run: |
           python3 - <<'PY'
@@ -71,5 +78,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if git diff --quiet -- index.html; then echo 'No changes'; exit 0; fi
           git add index.html
-          git commit -m 'Fix Egg Pokemon details'
+          git commit -m 'Remove Field Research section'
           git push
