@@ -9,7 +9,10 @@ s = INDEX.read_text(encoding='utf-8')
 new = r'''async function dynamax(){
   let b=$('max');
   try{
-    let r=await get('data/maxbattles.json',300000),c=r?.currentList||r?.current||r||{},a=[];
+    let r;
+    try{ r=await get('data/maxbattles.json',300000); }
+    catch(_){ r=await get('https://raw.githubusercontent.com/tobiasguldbechschmidt-lab/PoGo-uge/main/data/maxbattles.json',300000); }
+    let c=r?.currentList||r?.current||r||{},a=[];
     if(Array.isArray(c))a=c;
     else if(c&&typeof c==='object')Object.entries(c).forEach(([k,v])=>{if(Array.isArray(v))v.forEach(x=>a.push({...x,_tier:k}))});
     if(!a.length)throw 0;
@@ -42,8 +45,6 @@ for i, block in enumerate(blocks, 1):
     finally:
         q.unlink(missing_ok=True)
 
-for needle in ('data/maxbattles.json','ca. 1/20 (5 %)','Spillere'):
+for needle in ('data/maxbattles.json','raw.githubusercontent.com/tobiasguldbechschmidt-lab/PoGo-uge/main/data/maxbattles.json','ca. 1/20 (5 %)','Spillere'):
     if needle not in s2:
         raise SystemExit(f'Missing Dynamax validation marker: {needle}')
-
-# Workflow trigger marker: keep this patch script in the workflow path set.
