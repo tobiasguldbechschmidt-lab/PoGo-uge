@@ -10,6 +10,7 @@ on:
       - 'scripts/add-lure-shiny-details.py'
       - 'scripts/add-special-lure-modules.py'
       - 'scripts/match-lure-incense-spawns.py'
+      - 'scripts/fix-eggs-details.py'
   workflow_dispatch:
 
 permissions:
@@ -31,7 +32,9 @@ jobs:
         run: python3 scripts/add-special-lure-modules.py
       - name: Match Lure Spawns to Incense
         run: python3 scripts/match-lure-incense-spawns.py
-      - name: Validate generated Lure markup
+      - name: Fix Egg Pokemon details
+        run: python3 scripts/fix-eggs-details.py
+      - name: Validate generated Lure and Egg markup
         run: |
           grep -q 'data-lure-p=' index.html
           grep -q 'Lure Module · Spawns' index.html
@@ -44,7 +47,11 @@ jobs:
           grep -q 'Golden Lure' index.html
           grep -q 'data-special-lure=' index.html
           grep -q 'data-special-lure-p=' index.html
-          echo 'All Lure modules verified'
+          grep -q 'function hundoCp(q)' index.html
+          grep -q '1/64 (1,56 %)' index.html
+          grep -q '10/10/10' index.html
+          grep -q 'Hatch level' index.html
+          echo 'All Lure and Egg details verified'
       - name: Validate JavaScript
         run: |
           python3 - <<'PY'
@@ -53,7 +60,7 @@ jobs:
           s=Path('index.html').read_text(encoding='utf-8')
           blocks=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',s,re.I)
           for i,js in enumerate(blocks,1):
-              f=Path(tempfile.gettempdir())/f'lure-page-{i}.js'
+              f=Path(tempfile.gettempdir())/f'page-{i}.js'
               f.write_text(js,encoding='utf-8')
               subprocess.run(['node','--check',str(f)],check=True)
           print('All JavaScript blocks valid')
@@ -64,5 +71,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if git diff --quiet -- index.html; then echo 'No changes'; exit 0; fi
           git add index.html
-          git commit -m 'Add all special Lure Modules with shiny details'
+          git commit -m 'Fix Egg Pokemon details'
           git push
