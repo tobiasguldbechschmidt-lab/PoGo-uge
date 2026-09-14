@@ -12,6 +12,8 @@ on:
       - 'scripts/match-lure-incense-spawns.py'
       - 'scripts/fix-eggs-details.py'
       - 'scripts/remove-field-research.py'
+  pull_request_target:
+    types: [opened]
   schedule:
     - cron: '*/5 * * * *'
   issues:
