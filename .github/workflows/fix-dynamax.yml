@@ -1,0 +1,48 @@
+name: Fix Dynamax
+
+on:
+  push:
+    paths:
+      - 'scripts/fix-dynamax.py'
+      - '.github/workflows/fix-dynamax.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply Dynamax patch
+        run: python3 scripts/fix-dynamax.py
+
+      - name: Validate Dynamax
+        run: |
+          grep -q 'async function dynamax()' index.html
+          grep -q 'maxPlayers' index.html
+          grep -q 'ca. 1/128' index.html
+          python3 - <<'PY'
+          import re, subprocess, pathlib
+          s=pathlib.Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>',s,re.S|re.I)
+          for i,b in enumerate(blocks,1):
+              p=pathlib.Path(f'/tmp/dynamax-{i}.js'); p.write_text(b,encoding='utf-8')
+              subprocess.run(['node','--check',str(p)],check=True)
+          print(f'Validated {len(blocks)} JavaScript blocks')
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'Fix Dynamax current Max Battle display'
+            git push
+          fi
