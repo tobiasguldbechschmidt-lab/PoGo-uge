@@ -24,6 +24,12 @@ jobs:
         run: python3 scripts/add-lure-pokemon-types.py
       - name: Match Lure Spawns to Incense
         run: python3 scripts/match-lure-incense-spawns.py
+      - name: Validate generated Lure markup
+        run: |
+          grep -q 'data-lure-p=' index.html
+          grep -q 'Lure Module</h2>' index.html
+          grep -q 'showLurePokemonTypes' index.html
+          echo 'Lure spawn markup verified'
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
