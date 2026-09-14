@@ -29,16 +29,19 @@ if 'function lurePokemonSlug(' not in s:
     if marker not in s: raise SystemExit('dailyImg marker not found')
     s=s.replace(marker,helper+marker,1)
 
-if "closest('.card')" not in s:
-    marker="document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]')"
-    pos=s.find(marker)
-    if pos<0: raise SystemExit('event listener marker not found')
-    listener="document.addEventListener('click',e=>{let wild=document.getElementById('wild-content');if(!wild)return;let head=wild.querySelector('h2');if(!head||head.textContent.indexOf('Lure Module · Spawns')<0)return;let card=e.target.closest('.card');if(!card||e.target.closest('button'))return;let img=card.querySelector('img');let nm=card.querySelector('.name');if(!nm)return;showLurePokemonTypes(nm.textContent.trim(),img?img.src:'')});"
-    s=s[:pos]+listener+s[pos:]
+# Replace any existing Lure-Pokémon click handler so it works on the modal
+# where the Lure Module spawn cards are actually rendered.
+pattern=r"document\.addEventListener\('click',e=>\{let wild=document\.getElementById\('wild-content'\);if\(!wild\)return;let head=wild\.querySelector\('h2'\);if\(!head\|\|head\.textContent\.indexOf\('Lure Module · Spawns'\)<0\)return;let card=e\.target\.closest\('\.card'\);if\(!card\|\|e\.target\.closest\('button'\)\)return;let img=card\.querySelector\('img'\);let nm=card\.querySelector\('\.name'\);if\(!nm\)return;showLurePokemonTypes\(nm\.textContent\.trim\(\),img\?img\.src:''\)\}\);"
+s=re.sub(pattern,'',s)
+marker="document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]')"
+pos=s.find(marker)
+if pos<0: raise SystemExit('event listener marker not found')
+listener="document.addEventListener('click',e=>{let mb=document.getElementById('mb');if(!mb||!document.getElementById('modal')?.classList.contains('open'))return;let head=mb.querySelector('h2');if(!head||head.textContent.indexOf('Lure Module · Spawns')<0)return;let card=e.target.closest('.card');if(!card||!mb.contains(card)||e.target.closest('button'))return;let img=card.querySelector('img');let nm=card.querySelector('.name');if(!nm)return;showLurePokemonTypes(nm.textContent.trim(),img?img.src:'')});"
+s=s[:pos]+listener+s[pos:]
 
 blocks=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',s,re.I)
 for i,js in enumerate(blocks,1):
     f=Path(f'/tmp/lure-type-script-{i}.js');f.write_text(js,encoding='utf-8');subprocess.run(['node','--check',str(f)],check=True)
-for x in ['function lurePokemonSlug','function showLurePokemonTypes','closest(\'.card\')','Lure Module · Spawns']:
+for x in ['function lurePokemonSlug','function showLurePokemonTypes','Lure Module · Spawns']:
     if x not in s: raise SystemExit('Missing '+x)
 p.write_text(s,encoding='utf-8')
