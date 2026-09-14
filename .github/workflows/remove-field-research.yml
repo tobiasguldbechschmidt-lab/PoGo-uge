@@ -1,0 +1,50 @@
+name: Remove Field Research
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/remove-field-research.py'
+      - '.github/workflows/remove-field-research.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  remove:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove Field Research
+        run: python3 scripts/remove-field-research.py
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          import re, subprocess
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',s,re.S|re.I)
+          if not blocks:
+              raise SystemExit('No script blocks found')
+          for i,b in enumerate(blocks,1):
+              Path(f'/tmp/script-{i}.js').write_text(b,encoding='utf-8')
+              r=subprocess.run(['node','--check',f'/tmp/script-{i}.js'],capture_output=True,text=True)
+              if r.returncode:
+                  print(r.stderr)
+                  raise SystemExit(f'JavaScript syntax error in block {i}')
+          print(f'Validated {len(blocks)} JavaScript blocks')
+          PY
+      - name: Validate Field Research is gone
+        run: |
+          ! grep -q 'Field Research Tasks' index.html
+          ! grep -q 'data-p="research"' index.html
+          ! grep -q 'id="p-research"' index.html
+          ! grep -q "research()" index.html
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html scripts/remove-field-research.py .github/workflows/remove-field-research.yml
+          git diff --cached --quiet || git commit -m 'Remove Field Research section'
+          git push
