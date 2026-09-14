@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'scripts/fix-dynamax.py'
+      - 'scripts/update-dynamax-data.py'
       - '.github/workflows/fix-dynamax.yml'
   schedule:
     - cron: '*/15 * * * *'
@@ -19,18 +20,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Fetch current Max Battle feed
+      - name: Build current Max Battle data
         run: |
-          mkdir -p data
-          curl --fail --retry 3 --retry-delay 2 -L 'https://pokemon-go-api.github.io/pokemon-go-api/api/maxbattles.json' -o data/maxbattles.json
+          python3 scripts/update-dynamax-data.py
           python3 - <<'PY'
           import json
           with open('data/maxbattles.json',encoding='utf-8') as f:
               d=json.load(f)
-          c=d.get('currentList',d.get('current',d)) if isinstance(d,dict) else d
-          if not c:
-              raise SystemExit('Max Battle feed is empty')
-          print('Max Battle feed OK')
+          c=d.get('currentList',{})
+          count=sum(len(v) for v in c.values() if isinstance(v,list))
+          if count == 0:
+              raise SystemExit('Current Max Battle data is empty')
+          print(f'Current Max Battle entries: {count}')
           PY
 
       - name: Apply Dynamax patch
@@ -62,5 +63,3 @@ jobs:
             git commit -m 'Refresh current Dynamax Max Battles'
             git push
           fi
-
-      # Keep the workflow file itself in the trigger set so manual code repairs rerun it.
