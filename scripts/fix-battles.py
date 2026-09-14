@@ -1,9 +1,11 @@
 from pathlib import Path
-import re
 
 p=Path('index.html')
 s=p.read_text(encoding='utf-8')
-pattern=r'function battleQ\(e\)\{.*?(?=\nasync function ev\()'
+start=s.find('function battleQ')
+end=s.find('async function ev',start)
+if start<0 or end<0:
+    raise SystemExit('battle anchors not found')
 replacement=r'''function battleQ(e){let s=(e.title+' '+(e.category||'')+' '+(e.type||'')).toLowerCase();return /battle league|go battle league|league:|cup:/.test(s)}
 function battles(){
   let b=$('battles');
@@ -28,8 +30,6 @@ function battles(){
   b.innerHTML=h;up()
 }
 '''
-if not re.search(pattern,s,flags=re.S):
-    raise SystemExit('battle function pattern not found')
-s=re.sub(pattern,replacement,s,count=1,flags=re.S)
+s=s[:start]+replacement+s[end:]
 p.write_text(s,encoding='utf-8')
 print('Battle League schedule updated')
