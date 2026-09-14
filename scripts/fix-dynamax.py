@@ -26,10 +26,11 @@ new = r'''async function dynamax(){
 }
 '''
 
-pat = re.compile(r'async function dynamax\(\)\{.*?\}\nfunction battleQ', re.S)
-s2, n = pat.subn(new + 'function battleQ', s, count=1)
-if n != 1:
-    raise SystemExit(f'Expected exactly one dynamax function replacement, got {n}')
+start = s.find('async function dynamax(){')
+end = s.find('function battleQ', start)
+if start < 0 or end < 0 or end <= start:
+    raise SystemExit(f'Could not find safe Dynamax boundaries: start={start}, end={end}')
+s2 = s[:start] + new + s[end:]
 INDEX.write_text(s2, encoding='utf-8')
 
 blocks = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', s2, flags=re.S|re.I)
