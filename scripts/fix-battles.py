@@ -3,7 +3,7 @@ import re
 
 p=Path('index.html')
 s=p.read_text(encoding='utf-8')
-pattern=r'function battles\(\)\{.*?\n\}show\('
+pattern=r'function battles\(\)\{.*?\}show\('
 replacement=r'''function battles(){
   let b=$('battles');
   ev().then(a=>{
