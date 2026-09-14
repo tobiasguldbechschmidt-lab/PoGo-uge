@@ -1,6 +1,10 @@
 name: Add raid and Dynamax end times
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/add-raid-dynamax-end-times.py'
+      - '.github/workflows/add-raid-dynamax-end-times.yml'
 jobs:
   update:
     runs-on: ubuntu-latest
