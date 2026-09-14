@@ -1,0 +1,35 @@
+name: Add raid and Dynamax end times
+on:
+  workflow_dispatch:
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply end times
+        run: python3 scripts/add-raid-dynamax-end-times.py
+      - name: Validate JavaScript
+        run: |
+          python3 - <<'PY'
+          import re, pathlib, subprocess, tempfile
+          s=pathlib.Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\s[^>]*)?>([\s\S]*?)</script>',s,re.I)
+          if not blocks: raise SystemExit('No script blocks found')
+          for i,b in enumerate(blocks,1):
+              f=tempfile.NamedTemporaryFile('w',suffix='.js',delete=False,encoding='utf-8')
+              f.write(b); f.close()
+              r=subprocess.run(['node','--check',f.name],capture_output=True,text=True)
+              if r.returncode:
+                  print(r.stderr); raise SystemExit(f'JavaScript syntax error in block {i}')
+          print(f'Validated {len(blocks)} JavaScript block(s)')
+          PY
+      - name: Commit
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Show raid and Dynamax end times"
+          git push
