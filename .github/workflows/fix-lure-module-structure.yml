@@ -7,6 +7,7 @@ on:
       - '.github/workflows/fix-lure-module-structure.yml'
       - 'scripts/fix-lure-module.py'
       - 'scripts/add-lure-pokemon-types.py'
+      - 'scripts/match-lure-incense-spawns.py'
   workflow_dispatch:
 
 permissions:
@@ -21,11 +22,13 @@ jobs:
         run: python3 scripts/fix-lure-module.py
       - name: Add clickable Pokemon types
         run: python3 scripts/add-lure-pokemon-types.py
+      - name: Match Lure Spawns to Incense
+        run: python3 scripts/match-lure-incense-spawns.py
       - name: Commit
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if git diff --quiet -- index.html; then echo 'No changes'; exit 0; fi
           git add index.html
-          git commit -m 'Make Lure Pokemon clickable for type details'
+          git commit -m 'Match Lure Spawns to Incense layout'
           git push
