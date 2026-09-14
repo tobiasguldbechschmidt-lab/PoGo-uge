@@ -14,6 +14,8 @@ on:
       - 'scripts/remove-field-research.py'
   schedule:
     - cron: '*/5 * * * *'
+  issues:
+    types: [opened]
   workflow_dispatch:
 
 permissions:
