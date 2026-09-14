@@ -3,7 +3,7 @@ import re
 
 p=Path('index.html')
 s=p.read_text(encoding='utf-8')
-pattern=r'function battleQ\(e\)\{.*?\}show\('
+pattern=r'function battleQ\(e\)\{.*?(?=\nasync function ev\()'
 replacement=r'''function battleQ(e){let s=(e.title+' '+(e.category||'')+' '+(e.type||'')).toLowerCase();return /battle league|go battle league|league:|cup:/.test(s)}
 function battles(){
   let b=$('battles');
@@ -27,7 +27,7 @@ function battles(){
   let later=upcoming.slice(1,6);if(later.length)h+='<div class="section">📅 Kommende rotationer</div>'+later.map(card).join('');
   b.innerHTML=h;up()
 }
-show('''
+'''
 if not re.search(pattern,s,flags=re.S):
     raise SystemExit('battle function pattern not found')
 s=re.sub(pattern,replacement,s,count=1,flags=re.S)
