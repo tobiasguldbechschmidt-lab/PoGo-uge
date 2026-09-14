@@ -8,6 +8,7 @@ on:
       - 'scripts/fix-lure-module.py'
       - 'scripts/add-lure-pokemon-types.py'
       - 'scripts/add-lure-shiny-details.py'
+      - 'scripts/add-special-lure-modules.py'
       - 'scripts/match-lure-incense-spawns.py'
   workflow_dispatch:
 
@@ -26,6 +27,8 @@ jobs:
         continue-on-error: true
       - name: Add safe Lure shiny details
         run: python3 scripts/add-lure-shiny-details.py
+      - name: Add all special Lure Modules
+        run: python3 scripts/add-special-lure-modules.py
       - name: Match Lure Spawns to Incense
         run: python3 scripts/match-lure-incense-spawns.py
       - name: Validate generated Lure markup
@@ -34,7 +37,14 @@ jobs:
           grep -q 'Lure Module · Spawns' index.html
           grep -q 'showLurePokemonTypes' index.html
           grep -q '✨ Shiny chance' index.html
-          echo 'Lure spawn markup verified'
+          grep -q 'Glacial Lure' index.html
+          grep -q 'Mossy Lure' index.html
+          grep -q 'Magnetic Lure' index.html
+          grep -q 'Rainy Lure' index.html
+          grep -q 'Golden Lure' index.html
+          grep -q 'data-special-lure=' index.html
+          grep -q 'data-special-lure-p=' index.html
+          echo 'All Lure modules verified'
       - name: Validate JavaScript
         run: |
           python3 - <<'PY'
@@ -54,5 +64,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if git diff --quiet -- index.html; then echo 'No changes'; exit 0; fi
           git add index.html
-          git commit -m 'Show Lure shiny chance in Pokemon details'
+          git commit -m 'Add all special Lure Modules with shiny details'
           git push
