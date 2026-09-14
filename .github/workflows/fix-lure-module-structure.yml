@@ -1,0 +1,104 @@
+name: Structure normal Lure Module under Lure
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-lure-module-structure.yml'
+      - '.github/lure-module-structure-trigger.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch Lure structure safely
+        shell: python
+        run: |
+          from pathlib import Path
+          import re, subprocess
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Remove the previously misplaced Lure Module card, its old function and listeners.
+          s = re.sub(r"document\.addEventListener\('click',e=>\{let b=e\.target\.closest\('\[data-lure-spawns\]'\);if\(b\)\{e\.stopPropagation\(\);showNormalLureSpawns\(\)\}\}\);", '', s)
+          s = re.sub(r"document\.addEventListener\('click',e=>\{let b=e\.target\.closest\('\[data-lure-event-url\]'\);if\(b\)\{e\.stopPropagation\(\);let u=b\.dataset\.lureEventUrl;if\(u\)window\.location\.assign\(u\)\}\}\);", '', s)
+          s = re.sub(r"function showNormalLureSpawns\(\)\{[\s\S]*?\n\}", '', s, count=1)
+          s = re.sub(r"<button class=\\?\"card click\\?\" data-lure-spawns=\\?\"1\\?\"[\s\S]*?</button>", '', s, count=1)
+
+          # Replace the Lure tab renderer with a proper list of Lure types.
+          old = "if(tab==='lure')b.querySelector('#wild-content').innerHTML=bonusCards(lure,'Lure Modules');"
+          new = "if(tab==='lure')b.querySelector('#wild-content').innerHTML=lureCards();"
+          if old not in s:
+              raise SystemExit('Lure renderer marker not found')
+          s = s.replace(old, new, 1)
+
+          marker = "function dailyImg(id){"
+          if marker not in s:
+              raise SystemExit('dailyImg marker not found')
+
+          code = r'''function lureCards(){return '<div class=section>Lure</div><button class="card click" data-normal-lure="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">🌸</span><div class=grow><div class=name>Lure Module</div><div class=small>Se hvilke Pokémon der kan spawne lige nu</div></div>›</div></button>'}
+async function showNormalLureSpawns(){
+  try{
+    let a=await ev(),n=N(),events=a.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n));
+    let matches=[];
+    events.forEach(e=>{
+      let d=e.details||{}, vals=[];
+      Object.keys(d).forEach(k=>{if(/lure/i.test(k)&&Array.isArray(d[k]))vals.push(...d[k])});
+      if(!vals.length){let raw=JSON.stringify(e);if(/lure module/i.test(raw)){let sp=d.spawns||e.spawns||[];if(Array.isArray(sp))vals=sp}}
+      vals.forEach(v=>{
+        let name=typeof v==='string'?v:String(v?.name||v?.pokemon||'').trim();
+        if(!name)return;
+        let title=e.title||'Event',url=e.article_url||e.url||'';
+        let found=matches.find(x=>x.name.toLowerCase()===name.toLowerCase());
+        if(!found){found={name,events:[]};matches.push(found)}
+        if(!found.events.some(x=>x.title===title))found.events.push({title,url});
+      });
+    });
+    let h='<h2>🌸 Lure Module · Spawns</h2><div class=small>Normal Lure Module · normalt 30 minutter</div><div class=section>Sådan virker det</div><div class=card><div class=small>Et almindeligt Lure Module har ikke en fast permanent Pokémon-liste. Det øger vilde spawns ved et PokéStop, og Pokémon-poolen følger den aktuelle vilde spawn-pool og aktive events.</div></div>';
+    if(matches.length){
+      h+='<div class=section>Aktuelle event-spawns</div>';
+      h+=matches.map(x=>`<div class=card><div class=name>${E(x.name)}</div>${x.events.map(v=>`<div class=small style="margin-top:5px">${E(v.title)}</div>${v.url?`<button class="btn" type="button" data-lure-event-url="${E(v.url)}" style="width:100%;margin-top:7px;cursor:pointer">Åbn eventet ↗</button>`:'<div class=small style="margin-top:5px">Event-link ikke oplyst.</div>'}`).join('')}</div>`).join('');
+    }else{
+      h+='<div class=section>Aktuelle spawns</div><div class=note>Der er ingen registrerede aktive events, som ændrer Normal Lure Module-spawns lige nu.</div>';
+    }
+    h+='<div class=section>Bemærkning</div><div class=card><div class=small>Spawns kan ændre sig med sæsoner og events. Eventuelle event-baserede spawns vises med et link til eventet, når det officielle link findes.</div></div>';
+    open(h);
+  }catch(e){open('<h2>🌸 Lure Module · Spawns</h2><div class=note>Kunne ikke hente Lure Module-data. Tryk ↻ igen.</div>')}
+}'''
+          s = s.replace(marker, code + marker, 1)
+
+          listener = "document.addEventListener('click',e=>{let b=e.target.closest('[data-normal-lure]');if(b){e.stopPropagation();showNormalLureSpawns()}});document.addEventListener('click',e=>{let b=e.target.closest('[data-lure-event-url]');if(b){e.stopPropagation();let u=b.dataset.lureEventUrl;if(u)window.location.assign(u)}});"
+          insert_at = s.find("document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]')")
+          if insert_at < 0:
+              raise SystemExit('click listener marker not found')
+          s = s[:insert_at] + listener + s[insert_at:]
+
+          # Validate every script before writing anything.
+          scripts = re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>', s, re.S | re.I)
+          for i, js in enumerate(scripts, 1):
+              q=Path(f'/tmp/script-{i}.js'); q.write_text(js,encoding='utf-8')
+              subprocess.run(['node','--check',str(q)],check=True)
+
+          for required in ['data-wtab="lure"','Lure Module','data-normal-lure','showNormalLureSpawns','Åbn eventet ↗']:
+              if required not in s:
+                  raise SystemExit('Missing '+required)
+          if 'data-lure-spawns' in s:
+              raise SystemExit('Old misplaced Lure Module card/listener still present')
+
+          p.write_text(s,encoding='utf-8')
+
+      - name: Commit
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet -- index.html; then echo 'No changes needed.'; exit 0; fi
+          git add index.html
+          git commit -m 'Put normal Lure Module under Lure'
+          git push
