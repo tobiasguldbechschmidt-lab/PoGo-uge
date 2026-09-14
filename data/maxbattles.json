@@ -1,0 +1,1019 @@
+{
+  "currentList": {
+    "tier_1": [
+      {
+        "id": 111,
+        "names": {
+          "English": "Rhyhorn"
+        },
+        "level": 1,
+        "types": [
+          "Ground",
+          "Rock"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/111.png"
+        },
+        "cpRange": [
+          886,
+          943
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 831,
+        "names": {
+          "English": "Wooloo"
+        },
+        "level": 1,
+        "types": [
+          "Normal"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/831.png"
+        },
+        "cpRange": [
+          366,
+          403
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 819,
+        "names": {
+          "English": "Skwovet"
+        },
+        "level": 1,
+        "types": [
+          "Normal"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/819.png"
+        },
+        "cpRange": [
+          495,
+          539
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 816,
+        "names": {
+          "English": "Sobble"
+        },
+        "level": 1,
+        "types": [
+          "Water"
+        ],
+        "shiny": false,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/816.png"
+        },
+        "cpRange": [
+          579,
+          627
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 810,
+        "names": {
+          "English": "Grookey"
+        },
+        "level": 1,
+        "types": [
+          "Grass"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/810.png"
+        },
+        "cpRange": [
+          574,
+          620
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 568,
+        "names": {
+          "English": "Trubbish"
+        },
+        "level": 1,
+        "types": [
+          "Poison"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/568.png"
+        },
+        "cpRange": [
+          526,
+          571
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 761,
+        "names": {
+          "English": "Bounsweet"
+        },
+        "level": 1,
+        "types": [
+          "Grass"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/761.png"
+        },
+        "cpRange": [
+          237,
+          268
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 686,
+        "names": {
+          "English": "Inkay"
+        },
+        "level": 1,
+        "types": [
+          "Dark",
+          "Psychic"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/686.png"
+        },
+        "cpRange": [
+          486,
+          529
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 529,
+        "names": {
+          "English": "Drilbur"
+        },
+        "level": 1,
+        "types": [
+          "Ground"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/529.png"
+        },
+        "cpRange": [
+          732,
+          786
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 813,
+        "names": {
+          "English": "Scorbunny"
+        },
+        "level": 1,
+        "types": [
+          "Fire"
+        ],
+        "shiny": false,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/813.png"
+        },
+        "cpRange": [
+          579,
+          627
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 821,
+        "names": {
+          "English": "Rookidee"
+        },
+        "level": 1,
+        "types": [
+          "Flying"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/821.png"
+        },
+        "cpRange": [
+          344,
+          380
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 363,
+        "names": {
+          "English": "Spheal"
+        },
+        "level": 1,
+        "types": [
+          "Ice",
+          "Water"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/363.png"
+        },
+        "cpRange": [
+          505,
+          550
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 129,
+        "names": {
+          "English": "Magikarp"
+        },
+        "level": 1,
+        "types": [
+          "Water"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/129.png"
+        },
+        "cpRange": [
+          132,
+          157
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 163,
+        "names": {
+          "English": "Hoothoot"
+        },
+        "level": 1,
+        "types": [
+          "Normal",
+          "Flying"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/163.png"
+        },
+        "cpRange": [
+          349,
+          387
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 415,
+        "names": {
+          "English": "Combee"
+        },
+        "level": 1,
+        "types": [
+          "Bug",
+          "Flying"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/415.png"
+        },
+        "cpRange": [
+          251,
+          282
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 546,
+        "names": {
+          "English": "Cottonee"
+        },
+        "level": 1,
+        "types": [
+          "Grass",
+          "Fairy"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/546.png"
+        },
+        "cpRange": [
+          362,
+          400
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 328,
+        "names": {
+          "English": "Trapinch"
+        },
+        "level": 1,
+        "types": [
+          "Ground"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/328.png"
+        },
+        "cpRange": [
+          676,
+          728
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 25,
+        "names": {
+          "English": "Pikachu"
+        },
+        "level": 1,
+        "types": [
+          "Electric"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+        },
+        "cpRange": [
+          493,
+          536
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 58,
+        "names": {
+          "English": "Growlithe"
+        },
+        "level": 1,
+        "types": [
+          "Fire"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/58.png"
+        },
+        "cpRange": [
+          660,
+          710
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 524,
+        "names": {
+          "English": "Roggenrola"
+        },
+        "level": 1,
+        "types": [
+          "Rock"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/524.png"
+        },
+        "cpRange": [
+          639,
+          688
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 527,
+        "names": {
+          "English": "Woobat"
+        },
+        "level": 1,
+        "types": [
+          "Psychic",
+          "Flying"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/527.png"
+        },
+        "cpRange": [
+          535,
+          580
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 519,
+        "names": {
+          "English": "Pidove"
+        },
+        "level": 1,
+        "types": [
+          "Normal",
+          "Flying"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/519.png"
+        },
+        "cpRange": [
+          443,
+          484
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 4,
+        "names": {
+          "English": "Charmander"
+        },
+        "level": 1,
+        "types": [
+          "Fire"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png"
+        },
+        "cpRange": [
+          516,
+          560
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 7,
+        "names": {
+          "English": "Squirtle"
+        },
+        "level": 1,
+        "types": [
+          "Water"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png"
+        },
+        "cpRange": [
+          497,
+          540
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 98,
+        "names": {
+          "English": "Krabby"
+        },
+        "level": 1,
+        "types": [
+          "Water"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/98.png"
+        },
+        "cpRange": [
+          835,
+          892
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 63,
+        "names": {
+          "English": "Abra"
+        },
+        "level": 1,
+        "types": [
+          "Psychic"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/63.png"
+        },
+        "cpRange": [
+          712,
+          767
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 1,
+        "names": {
+          "English": "Bulbasaur"
+        },
+        "level": 1,
+        "types": [
+          "Grass",
+          "Poison"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
+        },
+        "cpRange": [
+          590,
+          637
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 140,
+        "names": {
+          "English": "Kabuto"
+        },
+        "level": 1,
+        "types": [
+          "Rock",
+          "Water"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/140.png"
+        },
+        "cpRange": [
+          730,
+          783
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 138,
+        "names": {
+          "English": "Omanyte"
+        },
+        "level": 1,
+        "types": [
+          "Rock",
+          "Water"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/138.png"
+        },
+        "cpRange": [
+          826,
+          882
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 280,
+        "names": {
+          "English": "Ralts"
+        },
+        "level": 1,
+        "types": [
+          "Psychic",
+          "Fairy"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/280.png"
+        },
+        "cpRange": [
+          275,
+          308
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 856,
+        "names": {
+          "English": "Hatenna"
+        },
+        "level": 1,
+        "types": [
+          "Psychic"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/856.png"
+        },
+        "cpRange": [
+          451,
+          492
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 10,
+        "names": {
+          "English": "Caterpie"
+        },
+        "level": 1,
+        "types": [
+          "Bug"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10.png"
+        },
+        "cpRange": [
+          219,
+          249
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 92,
+        "names": {
+          "English": "Gastly"
+        },
+        "level": 1,
+        "types": [
+          "Ghost",
+          "Poison"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png"
+        },
+        "cpRange": [
+          649,
+          702
+        ],
+        "form": "DYNAMAX"
+      }
+    ],
+    "tier_2": [
+      {
+        "id": 554,
+        "names": {
+          "English": "Darumaka"
+        },
+        "level": 2,
+        "types": [
+          "Fire"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/554.png"
+        },
+        "cpRange": [
+          768,
+          823
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 320,
+        "names": {
+          "English": "Wailmer"
+        },
+        "level": 2,
+        "types": [
+          "Water"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/320.png"
+        },
+        "cpRange": [
+          779,
+          838
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 349,
+        "names": {
+          "English": "Feebas"
+        },
+        "level": 2,
+        "types": [
+          "Water"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/349.png"
+        },
+        "cpRange": [
+          132,
+          157
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 66,
+        "names": {
+          "English": "Machop"
+        },
+        "level": 2,
+        "types": [
+          "Fighting"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/66.png"
+        },
+        "cpRange": [
+          678,
+          730
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 213,
+        "names": {
+          "English": "Shuckle"
+        },
+        "level": 2,
+        "types": [
+          "Bug",
+          "Rock"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/213.png"
+        },
+        "cpRange": [
+          189,
+          231
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 133,
+        "names": {
+          "English": "Eevee"
+        },
+        "level": 2,
+        "types": [
+          "Normal"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/133.png"
+        },
+        "cpRange": [
+          565,
+          612
+        ],
+        "form": "DYNAMAX"
+      }
+    ],
+    "tier_3": [
+      {
+        "id": 870,
+        "names": {
+          "English": "Falinks"
+        },
+        "level": 3,
+        "types": [
+          "Fighting"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/870.png"
+        },
+        "cpRange": [
+          1278,
+          1347
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 237,
+        "names": {
+          "English": "Hitmontop"
+        },
+        "level": 3,
+        "types": [
+          "Fighting"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/237.png"
+        },
+        "cpRange": [
+          1166,
+          1232
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 766,
+        "names": {
+          "English": "Passimian"
+        },
+        "level": 3,
+        "types": [
+          "Fighting"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/766.png"
+        },
+        "cpRange": [
+          1654,
+          1733
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 126,
+        "names": {
+          "English": "Magmar"
+        },
+        "level": 3,
+        "types": [
+          "Fire"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/126.png"
+        },
+        "cpRange": [
+          1298,
+          1367
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 633,
+        "names": {
+          "English": "Deino"
+        },
+        "level": 3,
+        "types": [
+          "Dark",
+          "Dragon"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/633.png"
+        },
+        "cpRange": [
+          560,
+          606
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 615,
+        "names": {
+          "English": "Cryogonal"
+        },
+        "level": 3,
+        "types": [
+          "Ice"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/615.png"
+        },
+        "cpRange": [
+          1524,
+          1598
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 125,
+        "names": {
+          "English": "Electabuzz"
+        },
+        "level": 3,
+        "types": [
+          "Electric"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/125.png"
+        },
+        "cpRange": [
+          1265,
+          1333
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 106,
+        "names": {
+          "English": "Hitmonlee"
+        },
+        "level": 3,
+        "types": [
+          "Fighting"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/106.png"
+        },
+        "cpRange": [
+          1399,
+          1472
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 113,
+        "names": {
+          "English": "Chansey"
+        },
+        "level": 3,
+        "types": [
+          "Normal"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/113.png"
+        },
+        "cpRange": [
+          654,
+          717
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 107,
+        "names": {
+          "English": "Hitmonchan"
+        },
+        "level": 3,
+        "types": [
+          "Fighting"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/107.png"
+        },
+        "cpRange": [
+          1263,
+          1332
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 780,
+        "names": {
+          "English": "Drampa"
+        },
+        "level": 3,
+        "types": [
+          "Normal",
+          "Dragon"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/780.png"
+        },
+        "cpRange": [
+          1588,
+          1665
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 302,
+        "names": {
+          "English": "Sableye"
+        },
+        "level": 3,
+        "types": [
+          "Dark",
+          "Ghost"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/302.png"
+        },
+        "cpRange": [
+          789,
+          843
+        ],
+        "form": "DYNAMAX"
+      },
+      {
+        "id": 374,
+        "names": {
+          "English": "Beldum"
+        },
+        "level": 3,
+        "types": [
+          "Steel",
+          "Psychic"
+        ],
+        "shiny": true,
+        "assets": {
+          "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/374.png"
+        },
+        "cpRange": [
+          513,
+          558
+        ],
+        "form": "DYNAMAX"
+      }
+    ],
+    "tier_4": [],
+    "tier_5": [],
+    "tier_6": []
+  }
+}
