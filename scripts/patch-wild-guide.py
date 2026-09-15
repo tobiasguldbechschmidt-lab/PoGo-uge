@@ -2,6 +2,7 @@ from pathlib import Path
 import re
 import subprocess
 
+# Keep this patch intentionally scoped to the Wild Guide fragment.
 index = Path('index.html')
 fragment = Path('scripts/wild-guide-fragment.html').read_text(encoding='utf-8')
 s = index.read_text(encoding='utf-8')
