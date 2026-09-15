@@ -764,7 +764,19 @@ document.addEventListener('click',function(e){
   function endFor(kind,name){
     const raw=String(name||'').trim();
     const n=normalize(raw);
-    return ROTATION_ENDS[kind][raw]||ROTATION_ENDS[kind][n]||ROTATION_ENDS[kind][raw.replace(/^Shadow\s+/i,'')]||null;
+    const direct=ROTATION_ENDS[kind][raw]||ROTATION_ENDS[kind][n]||ROTATION_ENDS[kind][raw.replace(/^Shadow\s+/i,'')];
+    if(direct)return direct;
+    if(kind==='raid'){
+      const now=new Date();
+      const isShadow=/^shadow\b/i.test(raw);
+      if(!isShadow && now < new Date('2026-09-15T22:00:00')) return '2026-09-15T22:00:00';
+      if(isShadow && now < new Date('2026-10-06T20:00:00')) return '2026-10-06T20:00:00';
+    }
+    if(kind==='max'){
+      const now=new Date();
+      if(now < new Date('2026-09-20T21:00:00')) return '2026-09-20T21:00:00';
+    }
+    return null;
   }
   function attach(root,kind){
     root.querySelectorAll('.card').forEach(card=>{
