@@ -13,6 +13,12 @@ end = s.find('</script></section>', start)
 if end < 0:
     raise SystemExit('Wild guide end marker was not found; stopping.')
 end += len('</script>')
+# Use event delegation for the guide's own tabs so Season/Regional keep working
+# even when the guide content is re-rendered or the parent Wild tabs change.
+fragment = fragment.replace(
+    "document.querySelectorAll('[data-guide-tab]').forEach(x=>x.onclick=()=>{render(x.dataset.guideTab);guide.dataset.rendered='1'});",
+    "guide.addEventListener('click',e=>{let tab=e.target.closest('[data-guide-tab]');if(!tab)return;e.preventDefault();e.stopPropagation();render(tab.dataset.guideTab);guide.dataset.rendered='1'});"
+)
 s = s[:start] + fragment + s[end:]
 blocks = re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>', s, re.I)
 for i, js in enumerate(blocks, 1):
