@@ -14,37 +14,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch normal Lure Module
+      - name: Patch wild Event Spawns
         shell: python
         run: |
           from pathlib import Path
           import re, subprocess
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          # Remove old misplaced implementation completely.
-          s=re.sub(r"document\.addEventListener\('click',e=>\{let b=e\.target\.closest\('\[data-lure-spawns\]'\);if\(b\)\{e\.stopPropagation\(\);showNormalLureSpawns\(\)\}\}\);",'',s)
-          s=re.sub(r"document\.addEventListener\('click',e=>\{let b=e\.target\.closest\('\[data-lure-event-url\]'\);if\(b\)\{e\.stopPropagation\(\);let u=b\.dataset\.lureEventUrl;if\(u\)window\.location\.assign\(u\)\}\}\);",'',s)
-          s=re.sub(r"function showNormalLureSpawns\(\)\{[\s\S]*?\n\}",'',s,count=1)
-          # Make the existing Lure tab show the normal Lure Module card.
-          old="if(tab==='lure')b.querySelector('#wild-content').innerHTML=bonusCards(lure,'Lure Modules');"
-          new="if(tab==='lure')b.querySelector('#wild-content').innerHTML=lureCards();"
-          if old not in s: raise SystemExit('Lure tab marker not found')
-          s=s.replace(old,new,1)
-          marker='function dailyImg(id){'
-          if marker not in s: raise SystemExit('dailyImg marker not found')
-          code=r'''function lureCards(){return '<div class=section>Lure</div><button class="card click" data-normal-lure="1" style="width:100%;text-align:left"><div class=row><span style="font-size:25px">🌸</span><div class=grow><div class=name>Lure Module</div><div class=small>Spawns</div></div>›</div></button>'}
-async function showNormalLureSpawns(){try{let a=await ev(),n=N(),matches=[];a.filter(e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n)).forEach(e=>{let d=e.details||{},vals=[];Object.keys(d).forEach(k=>{if(/lure/i.test(k)&&Array.isArray(d[k]))vals.push(...d[k])});if(!vals.length&&/lure module/i.test(JSON.stringify(e))){let sp=d.spawns||e.spawns||[];if(Array.isArray(sp))vals=sp}vals.forEach(v=>{let name=typeof v==='string'?v:String(v?.name||v?.pokemon||'').trim();if(!name)return;let title=e.title||'Event',url=e.article_url||e.url||'',f=matches.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!f){f={name,events:[]};matches.push(f)}if(!f.events.some(x=>x.title===title))f.events.push({title,url})})});let h='<h2>🌸 Lure Module · Spawns</h2><div class=small>Normal Lure Module · normalt 30 minutter</div><div class=section>Sådan virker det</div><div class=card><div class=small>Et almindeligt Lure Module har ikke en fast permanent Pokémon-liste. Det øger vilde spawns ved et PokéStop, og Pokémon-poolen følger den aktuelle vilde spawn-pool og aktive events.</div></div>';if(matches.length){h+='<div class=section>Aktuelle event-spawns</div>'+matches.map(x=>'<div class=card><div class=name>'+E(x.name)+'</div>'+x.events.map(v=>'<div class=small style="margin-top:5px">'+E(v.title)+'</div>'+(v.url?'<button class="btn" type="button" data-lure-event-url="'+E(v.url)+'" style="width:100%;margin-top:7px;cursor:pointer">Åbn eventet ↗</button>':'<div class=small style="margin-top:5px">Event-link ikke oplyst.</div>')).join('')+'</div>').join('')}else{h+='<div class=section>Aktuelle spawns</div><div class=note>Der er ingen registrerede aktive events, som ændrer Normal Lure Module-spawns lige nu.</div>'}h+='<div class=section>Bemærkning</div><div class=card><div class=small>Spawns kan ændre sig med sæsoner og events.</div></div>';open(h)}catch(e){open('<h2>🌸 Lure Module · Spawns</h2><div class=note>Kunne ikke hente Lure Module-data. Tryk ↻ igen.</div>')}}'''
-          s=s.replace(marker,code+marker,1)
-          listener="document.addEventListener('click',e=>{let b=e.target.closest('[data-normal-lure]');if(b){e.stopPropagation();showNormalLureSpawns()}});document.addEventListener('click',e=>{let b=e.target.closest('[data-lure-event-url]');if(b){e.stopPropagation();let u=b.dataset.lureEventUrl;if(u)window.location.assign(u)}});"
-          at=s.find("document.addEventListener('click',e=>{let b=e.target.closest('[data-event-url]')")
-          if at<0: raise SystemExit('event listener marker not found')
-          s=s[:at]+listener+s[at:]
+          start=s.find('async function wild(){')
+          if start<0: raise SystemExit('wild function not found')
+          brace=s.find('{',start); depth=0; end=-1
+          for i in range(brace,len(s)):
+              if s[i]=='{': depth+=1
+              elif s[i]=='}':
+                  depth-=1
+                  if depth==0: end=i+1; break
+          if end<0: raise SystemExit('wild function end not found')
+          replacement=r'''async function wild(){let b=$('wild');try{let a=await ev(),n=N(),m=new Map(),inc=[],lure=[];const active=e=>(!e.start||e.start<=n)&&(!e.end||e.end>=n);const arr=v=>Array.isArray(v)?v:[];const spawnArrays=e=>{let d=e.details||{},out=[];['spawns','wild_spawns','wildSpawns','pokemon','pokémon','encounters','wild'].forEach(k=>{out.push(...arr(e[k]),...arr(d[k]))});Object.keys(d).forEach(k=>{if(/spawn|encounter|wild/i.test(k))out.push(...arr(d[k]))});return out};a.filter(active).forEach(e=>{let title=e.title||e.name||'Event',url=e.article_url||e.url||'';spawnArrays(e).forEach(p=>{let q=typeof p==='string'?{name:p}:p||{},name=String(q.name||q.pokemon||q.species||q.pokemon_name||'').trim();if(!name)return;let key=name.toLowerCase();if(!m.has(key))m.set(key,{...q,name,events:[]});let item=m.get(key);if(q.asset_url)item.asset_url=q.asset_url;if(q.shiny_available===false)item.shiny_available=false;if(!item.events.some(v=>v.title===title))item.events.push({title,url})});(e.details?.bonuses||[]).forEach(v=>{let t=typeof v==='string'?v:v.text||v.name||'';if(/incense/i.test(t))inc.push([title,t]);if(/lure/i.test(t))lure.push([title,t])})});let a1=[...m.values()];let unique=x=>x.filter((v,i)=>x.findIndex(y=>y[0]===v[0]&&y[1]===v[1])===i);inc=unique(inc);lure=unique(lure);function eventCards(){return a1.length?'<div class=section>Event-Pokémon i det fri</div>'+a1.map((p,i)=>`<div class="card click" data-w="${i}"><div class=row><div class=img>${p.asset_url?`<img src="${E(p.asset_url)}" alt="${E(p.name)}" loading="lazy">`:'🌿'}</div><div class=grow><div class=name>${E(p.name)}</div><div class=small>${E(p.events.map(v=>v.title).join(' · ')||'Event-spawn')}</div><div class=small>${p.shiny_available===false?'✨ Shiny ikke udgivet':'✨ Shiny: standard wild-odds'}</div></div>›</div></div>`).join(''):'<div class=note>Ingen aktive event-spawns registreret.</div>'}function render(tab){b.querySelectorAll('[data-wtab]').forEach(x=>x.classList.toggle('active',x.dataset.wtab===tab));if(tab==='event')b.querySelector('#wild-content').innerHTML=eventCards();if(tab==='incense')b.querySelector('#wild-content').innerHTML=dailyIncenseCards();if(tab==='lure')b.querySelector('#wild-content').innerHTML=lureCards();b.querySelectorAll('[data-daily]').forEach(x=>x.onclick=()=>showDailyIncense());b.querySelectorAll('[data-w]').forEach(x=>x.onclick=async()=>{let p=a1[+x.dataset.w],q=await poke(pid(p)),t=[];const addT=v=>{if(v==null)return;if(Array.isArray(v)){v.forEach(addT);return}if(typeof v==='object'){addT(v.name??v.type??v.value??v.typeName);return}let z=typeof v==='number'?TYPE_NAMES[v]:String(v).trim();if(z&&!t.includes(z))t.push(z)};[q?.types,q?.type,q?.type1,q?.type2,q?.data?.types,q?.data?.type,q?.data?.type1,q?.data?.type2,p?.types,p?.type,p?.type1,p?.type2].forEach(addT);let events=p.events||[];open(`<h2>${E(p.name)}</h2><div class=section>Type</div><div class=card>${t.map(v=>E(v)).join(' · ')||'Ikke oplyst'}</div><div class=section>Shiny-chance</div><div class=card>✨ ${E(shiny(p,q,'wild'))}</div><div class=section>Hvorfor spawner den?</div>${events.length?events.map(v=>`<div class="card click" data-event-url="${E(v.url||'')}" ${v.url?'':'style="cursor:default"'}><div class=name>${E(v.title)}</div>${v.url?'<div class=small style="margin-top:5px">Åbn eventet ↗</div>':'<div class=small style="margin-top:5px">Event-link ikke oplyst.</div>'}</div>`).join(''):'<div class=card><div class=small>Event ikke oplyst.</div></div>'}`)})}b.innerHTML=`<div class="wild-tabs"><button class="wild-tab active" data-wtab="event">Event-spawns</button><button class="wild-tab" data-wtab="incense">Incense</button><button class="wild-tab" data-wtab="lure">Lure</button></div><div id="wild-content"></div>`;b.querySelectorAll('[data-wtab]').forEach(x=>x.onclick=()=>render(x.dataset.wtab));render('event');up()}'''
+          s=s[:start]+replacement+s[end:]
           blocks=re.findall(r'<script(?:[^>]*)>([\s\S]*?)</script>',s,re.I)
           for i,js in enumerate(blocks,1):
-              f=Path(f'/tmp/script-{i}.js');f.write_text(js,encoding='utf-8');subprocess.run(['node','--check',str(f)],check=True)
-          for x in ['data-wtab="lure"','Lure Module','data-normal-lure="1"','showNormalLureSpawns','Åbn eventet ↗']:
-              assert x in s, 'Missing '+x
-          assert 'data-lure-spawns="1"' not in s
+              f=Path(f'/tmp/wild-script-{i}.js');f.write_text(js,encoding='utf-8');subprocess.run(['node','--check',str(f)],check=True)
           p.write_text(s,encoding='utf-8')
       - name: Commit
         shell: bash
@@ -53,5 +43,5 @@ async function showNormalLureSpawns(){try{let a=await ev(),n=N(),matches=[];a.fi
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           if git diff --quiet -- index.html; then echo 'No changes'; exit 0; fi
           git add index.html
-          git commit -m 'Add normal Lure Module under Lure'
+          git commit -m 'Fix wild event spawn rendering'
           git push
