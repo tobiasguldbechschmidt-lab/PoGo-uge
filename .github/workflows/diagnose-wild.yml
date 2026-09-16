@@ -1,0 +1,40 @@
+name: Diagnose In The Wild
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-wild.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright
+        run: npm init -y >/dev/null 2>&1 && npm install playwright --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Test deployed site
+        run: |
+          cat > /tmp/test.js <<'EOF'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage();
+            page.on('console',m=>console.log('[console]',m.type(),m.text()));
+            page.on('pageerror',e=>console.log('[pageerror]',e.stack||e.message));
+            page.on('requestfailed',r=>console.log('[requestfailed]',r.url(),r.failure()?.errorText));
+            await page.goto('https://tobiasguldbechschmidt-lab.github.io/PoGo-uge/',{waitUntil:'networkidle',timeout:30000});
+            console.log('[loaded]',await page.title());
+            await page.locator('[data-p="wild"]').click();
+            await page.waitForTimeout(12000);
+            console.log('[wild text]',await page.locator('#wild').innerText());
+            console.log('[wild html]',(await page.locator('#wild').innerHTML()).slice(0,4000));
+            await browser.close();
+          })().catch(e=>{console.error(e.stack||e);process.exit(1)});
+          EOF
+          node /tmp/test.js
