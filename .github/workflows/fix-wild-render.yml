@@ -1,0 +1,44 @@
+name: Fix In The Wild render
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/fix-wild-render.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch wild render fallback
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="""async function wild(){\n  const b=$('wild');\n  try{\n    const n=N(), m=new Map(), inc=[], lure=[];"""
+          new="""async function wild(){\n  const b=$('wild');\n  b.innerHTML='<div class=section>In The Wild</div><div class=note>Indlæser aktive spawns…</div>';\n  try{\n    const n=N(), m=new Map(), inc=[], lure=[];"""
+          if s.count(old)!=1: raise SystemExit(f'Expected one wild anchor, found {s.count(old)}')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+      - name: Validate JavaScript
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re,subprocess,tempfile
+          s=Path('index.html').read_text(encoding='utf-8')
+          blocks=re.findall(r'<script(?:\\s[^>]*)?>(.*?)</script>',s,re.S|re.I)
+          for i,j in enumerate(blocks,1):
+            with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False,encoding='utf-8') as f:
+              f.write(j); n=f.name
+            subprocess.run(['node','--check',n],check=True)
+          print('validated',len(blocks),'script blocks')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Fix In The Wild initial render'
+          git push
